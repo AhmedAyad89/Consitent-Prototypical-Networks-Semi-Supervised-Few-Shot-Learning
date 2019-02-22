@@ -2,7 +2,7 @@
 Code for paper
 *Semi-Supervised Few-Shot Learning with Local and Global Consistency.* [[arxiv](LINK)]
 
-This code is based on [https://github.com/renmengye/few-shot-ssl-public]
+This code is based on [https://github.com/renmengye/few-shot-ssl-public].
 
 From the paper:
 * Mengye Ren, Eleni Triantafillou, Sachin Ravi, Jake Snell, Kevin Swersky, Joshua B. Tenenbaum, Hugo Larochelle and Richard S. Zemel.
@@ -86,6 +86,8 @@ python run_exp.py --data_root $DATA_ROOT             \
 * Add an additional flag `--disable_distractor` to remove all distractor classes in the unlabeled images.
 * Add an additional flag `--use_test` to evaluate on the test set instead of the validation set.
 * More commandline details see `run_exp.py`.
+* Hyperparams internal to the SSL methods(VAT/RW) are set as flags, for info see `VAT_utils.py`
+* Model architercture and all other hyperparams are set from the config files, contained in the `configs` folder.
 
 ## Simple Baselines for Few-Shot Classification
 Please run the following script to reproduce a suite of baseline results.
@@ -95,26 +97,46 @@ python run_baseline_exp.py --data_root $DATA_ROOT    \
 ```
 * Possible `DATASET` options are `omniglot`, `mini-imagenet`.
 
-## Run over Multiple Random Splits
-Please run the following script to reproduce results over 10 random label/unlabel splits, and test 
-the model with different number of unlabeled items per episode. The default seeds are 0, 1001, ..., 
-9009.
+## Run SOTA CPN models
+To train/test the state of the art CPN, and reproduce the results in the paper, set hyperparams as specified in the paper, and run the `basic-VAT-ENT` model.
+
+For example, to train a CPN on 5-shot mini-imagenet:
+ 
 ```
-python run_multi_exp.py --data_root $DATA_ROOT       \
-                        --dataset {DATASET}          \
-                        --label_ratio {LABEL_RATIO}  \
-                        --model {MODEL}              \
+python run_exp.py --data_root $DATA_ROOT       \
+                        --dataset mini-imagenet          \
+                        --label_ratio 0.4  \
+                        --model bas-VAT-ENT             \
+						--nshot 5			\
                         [--disable_distractor]       \
-                        [--use_test]
 ```
-* Possible `MODEL` options are `basic`, `kmeans-refine`, `kmeans-refine-radius`, and `kmeans-refine-mask`.
-* Possible `DATASET` options are `omniglot`, `mini_imagenet`, `tiered_imagenet`.
-* Use `{LABEL_RATIO}` 0.1 for `omniglot` and `tiered-imagenet`, and 0.4 for `mini-imagenet`. 
-* Add an additional flag `--disable_distractor` to remove all distractor classes in the unlabeled images.
-* Add an additional flag `--use_test` to evaluate on the test set instead of the validation set.
 
-##Run SOTA CPN models
+To test:
+```
+python run_exp.py --data_root $DATA_ROOT             \
+                  --dataset mini-imagenet                \
+                  --model basic-VAT-ENT                    \
+                  --results {SAVE_CKPT_FOLDER}       \
+                  --eval --pretrain {MODEL_ID}       \
+                  [--num_unlabel {NUM_UNLABEL}]      \
+                  [--num_test {NUM_TEST}]            \
+                  [--disable_distractor]             \
+                  [--use_test]
 
+```
+
+To test CPN+semi-supervised inference:
+```
+python run_exp.py --data_root $DATA_ROOT             \
+                  --dataset mini-imagenet                \
+                  --model kmeans-refine                    \
+                  --results {SAVE_CKPT_FOLDER}       \
+                  --eval --pretrain {MODEL_ID}       \
+                  [--num_unlabel {NUM_UNLABEL}]      \
+                  [--num_test {NUM_TEST}]            \
+                  [--disable_distractor]             \
+                  [--use_test]
+```			  
 
 
 ## Citation
