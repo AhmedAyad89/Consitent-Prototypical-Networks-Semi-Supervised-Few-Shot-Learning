@@ -4,7 +4,7 @@ Code for paper
 
 This code is based on [https://github.com/renmengye/few-shot-ssl-public].
 
-From the paper:
+Based on the paper:
 * Mengye Ren, Eleni Triantafillou, Sachin Ravi, Jake Snell, Kevin Swersky, Joshua B. Tenenbaum, Hugo Larochelle and Richard S. Zemel.
 Meta-Learning for Semi-Supervised Few-Shot Classification. 
 In *Proceedings of 6th International Conference on Learning Representations (ICLR)*, 2018.
@@ -103,24 +103,24 @@ To train/test the state of the art CPN, and reproduce the results in the paper, 
 For example, to train a CPN on 5-shot mini-imagenet:
  
 ```
-python run_exp.py --data_root $DATA_ROOT       \
-                        --dataset mini-imagenet          \
-                        --label_ratio 0.4  \
-                        --model bas-VAT-ENT             \
-						--nshot 5			\
-                        [--disable_distractor]       \
+python run_exp.py --data_root $DATA_ROOT       		\
+                        --dataset mini-imagenet     \
+                        --label_ratio 0.4  			\
+                        --model bas-VAT-ENT         \
+						--nshot 5					\
+                        [--disable_distractor]      \
 ```
 
 To test:
 ```
-python run_exp.py --data_root $DATA_ROOT             \
-                  --dataset mini-imagenet                \
-                  --model basic-VAT-ENT                    \
-                  --results {SAVE_CKPT_FOLDER}       \
-                  --eval --pretrain {MODEL_ID}       \
-                  [--num_unlabel {NUM_UNLABEL}]      \
-                  [--num_test {NUM_TEST}]            \
-                  [--disable_distractor]             \
+python run_exp.py --data_root $DATA_ROOT           	\
+                  --dataset mini-imagenet           \
+                  --model basic-VAT-ENT             \
+                  --results {SAVE_CKPT_FOLDER}      \
+                  --eval --pretrain {MODEL_ID}      \
+                  [--num_unlabel {NUM_UNLABEL}]     \
+                  [--num_test {NUM_TEST}]           \
+                  [--disable_distractor]            \
                   [--use_test]
 
 ```
@@ -128,8 +128,8 @@ python run_exp.py --data_root $DATA_ROOT             \
 To test CPN+semi-supervised inference:
 ```
 python run_exp.py --data_root $DATA_ROOT             \
-                  --dataset mini-imagenet                \
-                  --model kmeans-refine                    \
+                  --dataset mini-imagenet            \
+                  --model kmeans-refine              \
                   --results {SAVE_CKPT_FOLDER}       \
                   --eval --pretrain {MODEL_ID}       \
                   [--num_unlabel {NUM_UNLABEL}]      \
@@ -144,17 +144,13 @@ If you use our code, please consider cite the following:
 
 
 ```
-@inproceedings{ren18fewshotssl,
-  author   = {Mengye Ren and 
-              Eleni Triantafillou and 
-              Sachin Ravi and 
-              Jake Snell and 
-              Kevin Swersky and 
-              Joshua B. Tenenbaum and 
-              Hugo Larochelle and 
-              Richard S. Zemel},
-  title    = {Meta-Learning for Semi-Supervised Few-Shot Classification},
-  booktitle= {Proceedings of 6th International Conference on Learning Representations {ICLR}},
-  year     = {2018},
+@inproceedings{ayad19cpn,
+  author   = {	Ahmed Ayyad and
+				Nassir Navab and
+				Mohamed Elhoseiny and
+				Shadi  Albarqouni},
+  title    = {Semi-Supervised Few-Shot Learning with Local and Global Consistency},
+  booktitle= {},
+  year     = {2019},
 }
 ```
