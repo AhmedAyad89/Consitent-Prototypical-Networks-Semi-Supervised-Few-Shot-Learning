@@ -1,6 +1,7 @@
 # Consistent Prototypical Networks(CPN)
 Code for paper
 *Semi-Supervised Few-Shot Learning with Local and Global Consistency.* [[arxiv](LINK)]
+
 This code is based on [https://github.com/renmengye/few-shot-ssl-public]
 
 From the paper:
