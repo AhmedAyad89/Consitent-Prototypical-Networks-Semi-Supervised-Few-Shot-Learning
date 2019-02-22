@@ -103,7 +103,7 @@ To train/test the state of the art CPN, and reproduce the results in the paper, 
 For example, to train a CPN on 5-shot mini-imagenet:
  
 ```
-python run_exp.py --data_root $DATA_ROOT       		\
+python run_exp.py --data_root $DATA_ROOT 			\
                         --dataset mini-imagenet     \
                         --label_ratio 0.4  			\
                         --model bas-VAT-ENT         \
@@ -145,10 +145,10 @@ If you use our code, please consider cite the following:
 
 ```
 @inproceedings{ayad19cpn,
-  author   = {	Ahmed Ayyad and
-				Nassir Navab and
-				Mohamed Elhoseiny and
-				Shadi  Albarqouni},
+  author   = {Ahmed Ayyad and
+			Nassir Navab and
+			Mohamed Elhoseiny and
+			Shadi  Albarqouni},
   title    = {Semi-Supervised Few-Shot Learning with Local and Global Consistency},
   booktitle= {},
   year     = {2019},
