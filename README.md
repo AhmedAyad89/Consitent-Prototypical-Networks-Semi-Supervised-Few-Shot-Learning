@@ -103,38 +103,38 @@ To train/test the state of the art CPN, and reproduce the results in the paper, 
 For example, to train a CPN on 5-shot mini-imagenet:
  
 ```
-python run_exp.py --data_root $DATA_ROOT 			\
-                        --dataset mini-imagenet     \
-                        --label_ratio 0.4  			\
-                        --model bas-VAT-ENT         \
-						--nshot 5					\
-                        [--disable_distractor]      \
+python run_exp.py --data_root $DATA_ROOT 		\
+                        --dataset mini-imagenet		\
+                        --label_ratio 0.4  		\
+                        --model bas-VAT-ENT		\
+			--nshot 5			\
+                        [--disable_distractor]		\
 ```
 
 To test:
 ```
-python run_exp.py --data_root $DATA_ROOT           	\
-                  --dataset mini-imagenet           \
-                  --model basic-VAT-ENT             \
-                  --results {SAVE_CKPT_FOLDER}      \
-                  --eval --pretrain {MODEL_ID}      \
-                  [--num_unlabel {NUM_UNLABEL}]     \
-                  [--num_test {NUM_TEST}]           \
-                  [--disable_distractor]            \
+python run_exp.py --data_root $DATA_ROOT		\
+                  --dataset mini-imagenet		\
+                  --model basic-VAT-ENT 		\
+                  --results {SAVE_CKPT_FOLDER}		\
+                  --eval --pretrain {MODEL_ID}		\
+                  [--num_unlabel {NUM_UNLABEL}]		\
+                  [--num_test {NUM_TEST}]		\
+                  [--disable_distractor]		\
                   [--use_test]
 
 ```
 
 To test CPN+semi-supervised inference:
 ```
-python run_exp.py --data_root $DATA_ROOT             \
-                  --dataset mini-imagenet            \
-                  --model kmeans-refine              \
-                  --results {SAVE_CKPT_FOLDER}       \
-                  --eval --pretrain {MODEL_ID}       \
-                  [--num_unlabel {NUM_UNLABEL}]      \
-                  [--num_test {NUM_TEST}]            \
-                  [--disable_distractor]             \
+python run_exp.py --data_root $DATA_ROOT		\
+                  --dataset mini-imagenet		\
+                  --model kmeans-refine			\
+                  --results {SAVE_CKPT_FOLDER}		\
+                  --eval --pretrain {MODEL_ID}		\
+                  [--num_unlabel {NUM_UNLABEL}]		\
+                  [--num_test {NUM_TEST}]		\
+                  [--disable_distractor]		\
                   [--use_test]
 ```			  
 
