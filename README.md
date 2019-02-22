@@ -146,9 +146,9 @@ If you use our code, please consider cite the following:
 ```
 @inproceedings{ayad19cpn,
   author   = {Ahmed Ayyad and
-			Nassir Navab and
-			Mohamed Elhoseiny and
-			Shadi  Albarqouni},
+	Nassir Navab and
+	Mohamed Elhoseiny and
+	Shadi  Albarqouni},
   title    = {Semi-Supervised Few-Shot Learning with Local and Global Consistency},
   booktitle= {},
   year     = {2019},
