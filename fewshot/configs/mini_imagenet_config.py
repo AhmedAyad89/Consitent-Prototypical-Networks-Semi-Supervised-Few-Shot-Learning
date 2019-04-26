@@ -111,6 +111,17 @@ class BasicVAT_ENTConfig(BasicVAT):
     self.VAT_ENT_step_size = 2.5
     self.max_train_steps = 120000
 
+@RegisterConfig("mini-imagenet", "basic-ENT")
+class BasicENTConfig(BasicConfig):
+  def __init__(self):
+    super(BasicENTConfig, self).__init__()
+    self.name = "mini-imagenet_basic-ENT-multi"
+    self.model_class = "basic-ENT"
+    self.ENT_weight = 1.0
+    self.ENT_step_size = 2.5
+    self.max_train_steps = 120000
+
+
 
 @RegisterConfig("mini-imagenet-all", "basic-VAT-ENT")
 class BasicVAT_ENTConfigAll(BasicVAT):

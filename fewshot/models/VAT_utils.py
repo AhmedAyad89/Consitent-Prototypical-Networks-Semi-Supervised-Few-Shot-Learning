@@ -8,8 +8,8 @@ tf.app.flags.DEFINE_integer('VAT_num_power_iterations', 1, "the number of power 
 tf.app.flags.DEFINE_float('VAT_xi', 1e-2, "small constant for finite difference")
 tf.app.flags.DEFINE_float('graph_smoothing', 0.1, 'constant for smoothing the random walk graph')
 tf.app.flags.DEFINE_float('visit_loss_weight', 1.0, 'weight for the visit loss of the random walker')
-tf.app.flags.DEFINE_float('one_hop_weight', 0.2, "weight for the one hop walk")
-tf.app.flags.DEFINE_float('two_hop_weight', 0.1, "weight for the two hop walk")
+tf.app.flags.DEFINE_float('one_hop_weight', 0.4, "weight for the one hop walk")
+tf.app.flags.DEFINE_float('two_hop_weight', 0.2, "weight for the two hop walk")
 
 def entropy_y_x(logit):
     with tf.name_scope('entropy_x_y'):

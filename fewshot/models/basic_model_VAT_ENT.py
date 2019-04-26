@@ -80,8 +80,9 @@ class BasicModelENT(RefineModel):
 		s = s[0]
 		p = tf.stop_gradient(self.h_test[0])
 		labeled_affinity_matrix = compute_logits(p, p) - (tf.eye(s, dtype=tf.float32) * 1000.0)
+		labeled_logits = tf.stop_gradient(self._logits[0][0])
 
-		ENT_loss = walking_penalty_matching(logits, affinity_matrix, self._logits[0][0], labeled_affinity_matrix)
+		ENT_loss = walking_penalty_matching(logits, affinity_matrix, labeled_logits, labeled_affinity_matrix)
 		loss += ENT_weight * ENT_loss
 
 		ENT_opt = tf.train.AdamOptimizer(ENT_step_size * self.learn_rate, name="Entropy-optimizer")
