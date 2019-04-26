@@ -96,7 +96,7 @@ def consistency_penalty(logit):
     #                      message='\n----------------\n', summarize=5)
     return point_ent+class_ent
 
-def walking_penalty(logit, affinity_matrix):
+def landing_probs(logit, affinity_matrix):
     shape = tf.shape(logit)
     npoints = tf.to_float(shape[0])
     nclasses = tf.to_float(shape[1])
@@ -104,29 +104,68 @@ def walking_penalty(logit, affinity_matrix):
 
     point_prob = (1-c) * tf.nn.softmax(logit, 1) + c * tf.ones(shape)/nclasses
     class_prob = (1-c) * tf.nn.softmax(logit, 0) + c * tf.ones(shape)/npoints
-    T = tf.diag_part(tf.matmul(tf.transpose(class_prob), point_prob))
-    T_0 = tf.log(T)
+    T0 = tf.matmul(tf.transpose(class_prob), point_prob)
 
     unlabelled_transition = tf.to_float(tf.nn.softmax(affinity_matrix, 1))
-    T1 = tf.matmul(tf.transpose(class_prob), unlabelled_transition)
-    T_1 = tf.diag_part(tf.matmul(T1, point_prob))
+    T_1 = tf.matmul(tf.transpose(class_prob), unlabelled_transition)
+    T1 = tf.matmul(T_1, point_prob)
+
+    T2 = tf.matmul(T_1, unlabelled_transition)
+    T2 = tf.matmul(T2, point_prob)
+
+    return T0, T1, T2
+
+def walking_penalty(logit, affinity_matrix):
+    shape = tf.shape(logit)
+    npoints = tf.to_float(shape[0])
+    nclasses = tf.to_float(shape[1])
+    c = FLAGS.graph_smoothing
+
+    T0, T1, T2 = landing_probs(logit, affinity_matrix)
+    T_0 = tf.diag_part(T0)
+    T_0 = tf.log(T_0)
+    T_1 = tf.diag_part(T1)
     T_1 = tf.log(T_1)
-
-    T2 = tf.matmul(T1, unlabelled_transition)
-    T_2 = tf.diag_part(tf.matmul(T2, point_prob))
+    T_2 = tf.diag_part(T2)
     T_2 = tf.log(T_2)
-
     T = T_0 + FLAGS.one_hop_weight * T_1 + FLAGS.two_hop_weight * T_2
+
+    class_prob = (1-c) * tf.nn.softmax(logit, 0) + c * tf.ones(shape)/npoints
+    class_ent = tf.reduce_mean(class_prob, 1)
+    u_c = tf.ones(shape=tf.shape(class_ent)) / npoints
+    class_ent = -tf.reduce_sum(u_c * tf.log(class_ent))
+
+    # point_ent = tf.reduce_mean(point_prob, 0)
+    # u_p = tf.ones(shape=tf.shape(point_ent)) / nclasses
+    # point_ent = -tf.reduce_sum(u_p * tf.log(point_ent))
+
+    penalty = -tf.reduce_mean(T) + FLAGS.visit_loss_weight * class_ent
+    return penalty
+
+
+def walking_penalty_matching(logit, affinity_matrix, labeled_logit, labeled_affinity):
+    shape = tf.shape(logit)
+    npoints = tf.to_float(shape[0])
+    nclasses = tf.to_float(shape[1])
+    c = FLAGS.graph_smoothing
+
+    class_prob = (1-c) * tf.nn.softmax(logit, 0) + c * tf.ones(shape)/npoints
+
+    T0, T1, T2  = landing_probs(logit, affinity_matrix)
+    T0_l, T1_l, T2_l = landing_probs(labeled_logit, labeled_affinity)
+
+    loss_0 = -tf.reduce_mean( tf.reduce_sum(T0_l * tf.log(T0), -1) )
+    loss_1 = -tf.reduce_mean( tf.reduce_sum(T1_l * tf.log(T1), -1) )
+    loss_2 = -tf.reduce_mean( tf.reduce_sum(T2_l * tf.log(T2), -1) )
+
+    T = loss_0 + FLAGS.one_hop_weight * loss_1 + FLAGS.two_hop_weight * loss_2
 
     class_ent = tf.reduce_mean(class_prob, 1)
     u_c = tf.ones(shape=tf.shape(class_ent)) / npoints
     class_ent = -tf.reduce_sum(u_c * tf.log(class_ent))
 
-    point_ent = tf.reduce_mean(point_prob, 0)
-    u_p = tf.ones(shape=tf.shape(point_ent)) / nclasses
-    point_ent = -tf.reduce_sum(u_p * tf.log(point_ent))
 
-    penalty = -tf.reduce_mean(T) + FLAGS.visit_loss_weight * class_ent
+    penalty = T  + FLAGS.visit_loss_weight * class_ent
     return penalty
 
 

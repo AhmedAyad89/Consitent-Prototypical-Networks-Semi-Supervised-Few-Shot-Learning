@@ -92,7 +92,7 @@ from fewshot.models.kmeans_refine_mask_model import KMeansRefineMaskModel
 from fewshot.models.kmeans_refine_model import KMeansRefineModel
 from fewshot.models.kmeans_refine_radius_model import KMeansRefineRadiusModel, KMeansRadiusModel
 from fewshot.models.basic_model_VAT import BasicModelVAT
-from fewshot.models.basic_model_VAT_ENT import BasicModelVAT_ENT
+from fewshot.models.basic_model_VAT_ENT import BasicModelVAT_ENT, BasicModelENT
 from fewshot.models.basic_model_VAT import BasicModelVAT_Prototypes
 from fewshot.models.VAT_refine_model import RefineModelVAT, RefineModelVAT_Prototypes
 from fewshot.models.model_pairwise import PairwiseModel

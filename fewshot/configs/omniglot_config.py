@@ -112,6 +112,17 @@ class BasicVAT_ENTConfig(BasicVATConfig):
     self.VAT_ENT_step_size = 1.0
     self.max_train_steps = 20000
 
+@RegisterConfig("omniglot", "basic-ENT")
+class BasicENTConfig(BasicConfig):
+  def __init__(self):
+    super(BasicENTConfig, self).__init__()
+    self.name = "omniglot_basic-ENT"
+    self.model_class = "basic-ENT"
+    self.ENT_weight = 2.0
+    self.ENT_step_size = 1.0
+    self.max_train_steps = 20000
+
+
 @RegisterConfig("omniglot", "basic-VAT-prototypes")
 class BasicVAT_PrototypesConfig(BasicVATConfig):
 

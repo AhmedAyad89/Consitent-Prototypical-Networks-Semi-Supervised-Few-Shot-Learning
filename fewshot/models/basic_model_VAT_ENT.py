@@ -51,3 +51,49 @@ class BasicModelVAT_ENT(BasicModelVAT):
 		self.summaries.append(tf.summary.scalar('entropy loss', ENT_loss))
 
 		return loss, train_op
+
+
+#################################################################################
+
+@RegisterModel("basic-ENT")
+class BasicModelENT(RefineModel):
+	def predict(self):
+		super(RefineModel, self).predict()
+		with tf.name_scope('Predict/VAT'):
+			self._unlabel_logits = compute_logits(self._ssl_protos, self.h_unlabel)
+
+
+	def get_train_op(self, logits, y_test):
+		loss, train_op = RefineModel.get_train_op(self, logits, y_test)
+		config = self.config
+		ENT_weight = config.ENT_weight
+		ENT_step_size = config.ENT_step_size
+
+		logits = self._unlabel_logits
+
+		s = tf.shape(logits)
+		s = s[0]
+		p = tf.stop_gradient(self.h_unlabel)
+		affinity_matrix = compute_logits(p, p) - (tf.eye(s, dtype=tf.float32) * 1000.0)
+
+		s = tf.shape(self._logits[0][0])
+		s = s[0]
+		p = tf.stop_gradient(self.h_test[0])
+		labeled_affinity_matrix = compute_logits(p, p) - (tf.eye(s, dtype=tf.float32) * 1000.0)
+
+		ENT_loss = walking_penalty_matching(logits, affinity_matrix, self._logits[0][0], labeled_affinity_matrix)
+		loss += ENT_weight * ENT_loss
+
+		ENT_opt = tf.train.AdamOptimizer(ENT_step_size * self.learn_rate, name="Entropy-optimizer")
+		ENT_grads_and_vars = ENT_opt.compute_gradients(loss)
+		train_op = ENT_opt.apply_gradients(ENT_grads_and_vars)
+
+		for gradient, variable in ENT_grads_and_vars:
+			if gradient is None:
+				gradient = tf.constant(0.0)
+			self.adv_summaries.append(tf.summary.scalar("ENT/gradients/" + variable.name, l2_norm(gradient), family="Grads"))
+			self.adv_summaries.append(tf.summary.histogram("ENT/gradients/" + variable.name, gradient, family="Grads"))
+
+		self.summaries.append(tf.summary.scalar('entropy loss', ENT_loss))
+
+		return loss, train_op
