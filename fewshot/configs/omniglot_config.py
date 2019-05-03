@@ -121,6 +121,10 @@ class BasicENTConfig(BasicConfig):
     self.ENT_weight = 2.0
     self.ENT_step_size = 1.0
     self.max_train_steps = 20000
+    self.stop_grad_unlbl = False
+    self.stop_grad_lbl  = True
+    self.stop_grad_lbl_logits = True
+    self.match_to_labeled = False
 
 
 @RegisterConfig("omniglot", "basic-VAT-prototypes")

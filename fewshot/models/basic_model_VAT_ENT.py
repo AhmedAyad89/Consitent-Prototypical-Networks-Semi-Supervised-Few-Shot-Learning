@@ -70,27 +70,42 @@ class BasicModelENT(RefineModel):
 		ENT_weight = config.ENT_weight
 		ENT_step_size = config.ENT_step_size
 
-		logits = self._unlabel_logits
+		if (config.match_to_labeled):
 
-		s = tf.shape(logits)
-		s = s[0]
+			logits = self._unlabel_logits
+			s = tf.shape(logits)
+			s = s[0]
 
-		if (config.stop_grad_unlbl):
-			p = tf.stop_gradient(self.h_unlabel)
+			if (config.stop_grad_unlbl):
+				p = tf.stop_gradient(self.h_unlabel)
+			else:
+				p = self.h_unlabel
+			affinity_matrix = compute_logits(p, p) - (tf.eye(s, dtype=tf.float32) * 1000.0)
+
+			s = tf.shape(self._logits[0][0])
+			s = s[0]
+			if (config.stop_grad_lbl):
+				p = tf.stop_gradient(self.h_test[0])
+			else:
+				p = self.h_test[0]
+			labeled_affinity_matrix = compute_logits(p, p) - (tf.eye(s, dtype=tf.float32) * 1000.0)
+			labeled_logits = self._logits[0][0]
+			ENT_loss = walking_penalty_matching(logits, affinity_matrix, labeled_logits, labeled_affinity_matrix)
 		else:
-			p = self.h_unlabel
-		affinity_matrix = compute_logits(p, p) - (tf.eye(s, dtype=tf.float32) * 1000.0)
+			if (config.stop_grad_unlbl):
+				p = tf.stop_gradient(self.h_unlabel)
+			else:
+				p = self.h_unlabel
+			p_1 = p[::2]
+			p_2 = p[1::2]
+			logits_1 = self._unlabel_logits[::2]
+			logits_2 = self._unlabel_logits[1::2]
+			s = tf.shape(logits_1)[0]
+			affinity_matrix_1 = compute_logits(p_1, p_1) - (tf.eye(s, dtype=tf.float32) * 1000.0)
+			affinity_matrix_2 = compute_logits(p_2, p_2) - (tf.eye(s, dtype=tf.float32) * 1000.0)
+			ENT_loss = walking_penalty_matching(logits_1, affinity_matrix_1, logits_2, affinity_matrix_2)
 
-		s = tf.shape(self._logits[0][0])
-		s = s[0]
-		if (config.stop_grad_lbl):
-			p = tf.stop_gradient(self.h_test[0])
-		else:
-			p = self.h_test[0]
-		labeled_affinity_matrix = compute_logits(p, p) - (tf.eye(s, dtype=tf.float32) * 1000.0)
-		labeled_logits = self._logits[0][0]
 
-		ENT_loss = walking_penalty_matching(logits, affinity_matrix, labeled_logits, labeled_affinity_matrix)
 		loss += ENT_weight * ENT_loss
 
 		ENT_opt = tf.train.AdamOptimizer(ENT_step_size * self.learn_rate, name="Entropy-optimizer")

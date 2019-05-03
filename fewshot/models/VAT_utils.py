@@ -10,8 +10,10 @@ tf.app.flags.DEFINE_integer('VAT_num_power_iterations', 1, "the number of power 
 tf.app.flags.DEFINE_float('VAT_xi', 1e-2, "small constant for finite difference")
 tf.app.flags.DEFINE_float('graph_smoothing', 0.1, 'constant for smoothing the random walk graph')
 tf.app.flags.DEFINE_float('visit_loss_weight', 1.0, 'weight for the visit loss of the random walker')
-tf.app.flags.DEFINE_float('one_hop_weight', 0.4, "weight for the one hop walk")
-tf.app.flags.DEFINE_float('two_hop_weight', 0.2, "weight for the two hop walk")
+tf.app.flags.DEFINE_float('one_hop_weight', 1.0, "weight for the one hop walk")
+tf.app.flags.DEFINE_float('two_hop_weight', 1.0, "weight for the two hop walk")
+tf.app.flags.DEFINE_float('three_hop_weight', 1.0, "weight for the three hop walk")
+
 
 def entropy_y_x(logit):
     with tf.name_scope('entropy_x_y'):
@@ -112,10 +114,14 @@ def landing_probs(logit, affinity_matrix):
     T_1 = tf.matmul(tf.transpose(class_prob), unlabelled_transition)
     T1 = tf.matmul(T_1, point_prob)
 
-    T2 = tf.matmul(T_1, unlabelled_transition)
-    T2 = tf.matmul(T2, point_prob)
+    T_2 = tf.matmul(T_1, unlabelled_transition)
+    T2 = tf.matmul(T_2, point_prob)
 
-    return T0, T1, T2
+    T_3 = tf.matmul(T_2, unlabelled_transition)
+    T3 = tf.matmul(T_3, point_prob)
+
+
+    return T0, T1, T2, T3
 
 def walking_penalty(logit, affinity_matrix):
     shape = tf.shape(logit)
@@ -152,14 +158,16 @@ def walking_penalty_matching(logit, affinity_matrix, labeled_logit, labeled_affi
 
     class_prob = (1-c) * tf.nn.softmax(logit, 0) + c * tf.ones(shape)/npoints
 
-    T0, T1, T2  = landing_probs(logit, affinity_matrix)
-    T0_l, T1_l, T2_l = landing_probs(labeled_logit, labeled_affinity)
+    T0, T1, T2, T3  = landing_probs(logit, affinity_matrix)
+    T0_l, T1_l, T2_l, T3_l = landing_probs(labeled_logit, labeled_affinity)
 
-    loss_0 = -tf.reduce_mean( tf.reduce_sum(T0_l * tf.log(T0) - tf.log(T0_l), -1) )
-    loss_1 = -tf.reduce_mean( tf.reduce_sum(T1_l * tf.log(T1) - tf.log(T1_l), -1) )
-    loss_2 = -tf.reduce_mean( tf.reduce_sum(T2_l * tf.log(T2) - tf.log(T2_l), -1) )
+    loss_0 = -tf.reduce_mean( tf.reduce_sum(T0_l * (tf.log(T0) - tf.log(T0_l)), -1) )
+    loss_1 = -tf.reduce_mean( tf.reduce_sum(T1_l * (tf.log(T1) - tf.log(T1_l)), -1) )
+    loss_2 = -tf.reduce_mean( tf.reduce_sum(T2_l * (tf.log(T2) - tf.log(T2_l)), -1) )
+    loss_3 = -tf.reduce_mean( tf.reduce_sum(T3_l * (tf.log(T3) - tf.log(T3_l)), -1) )
 
-    T = loss_0 + FLAGS.one_hop_weight * loss_1 + FLAGS.two_hop_weight * loss_2
+
+    T = loss_0 + FLAGS.one_hop_weight * loss_1 + FLAGS.two_hop_weight * loss_2 + FLAGS.three_hop_weight * loss_3
 
     class_ent = tf.reduce_mean(class_prob, 1)
     u_c = tf.ones(shape=tf.shape(class_ent)) / npoints
@@ -196,6 +204,7 @@ def get_normalized_vector(d):
         d /= (1e-12 + tf.reduce_max(tf.abs(d), list(range(1, len(d.get_shape()))), keep_dims=True))
         d /= tf.sqrt(1e-6 + tf.reduce_sum(tf.pow(d, 2.0), list(range(1, len(d.get_shape()))) , keep_dims=True))
     return d
+
 
 
 if __name__ == '__main__':

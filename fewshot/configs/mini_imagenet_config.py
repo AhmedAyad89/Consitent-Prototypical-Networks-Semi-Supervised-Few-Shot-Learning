@@ -133,6 +133,7 @@ class BasicENTConfig(BasicConfig):
     self.stop_grad_unlbl = False
     self.stop_grad_lbl  = True
     self.stop_grad_lbl_logits = True
+    self.match_to_labeled = False
 
 
 
