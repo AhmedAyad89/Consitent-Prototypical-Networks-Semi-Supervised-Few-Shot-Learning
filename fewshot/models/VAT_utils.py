@@ -1,6 +1,8 @@
 import tensorflow as tf
-import numpy
+import numpy as np
 import sys, os
+
+walk_length = 10
 
 FLAGS = tf.flags.FLAGS
 tf.app.flags.DEFINE_float('VAT_epsilon', 100.0, "norm length for (virtual) adversarial training ")
@@ -142,7 +144,6 @@ def walking_penalty(logit, affinity_matrix):
     penalty = -tf.reduce_mean(T) + FLAGS.visit_loss_weight * class_ent
     return penalty
 
-
 def walking_penalty_matching(logit, affinity_matrix, labeled_logit, labeled_affinity):
     shape = tf.shape(logit)
     npoints = tf.to_float(shape[0])
@@ -154,9 +155,9 @@ def walking_penalty_matching(logit, affinity_matrix, labeled_logit, labeled_affi
     T0, T1, T2  = landing_probs(logit, affinity_matrix)
     T0_l, T1_l, T2_l = landing_probs(labeled_logit, labeled_affinity)
 
-    loss_0 = -tf.reduce_mean( tf.reduce_sum(T0_l * tf.log(T0), -1) )
-    loss_1 = -tf.reduce_mean( tf.reduce_sum(T1_l * tf.log(T1), -1) )
-    loss_2 = -tf.reduce_mean( tf.reduce_sum(T2_l * tf.log(T2), -1) )
+    loss_0 = -tf.reduce_mean( tf.reduce_sum(T0_l * tf.log(T0) - tf.log(T0_l), -1) )
+    loss_1 = -tf.reduce_mean( tf.reduce_sum(T1_l * tf.log(T1) - tf.log(T1_l), -1) )
+    loss_2 = -tf.reduce_mean( tf.reduce_sum(T2_l * tf.log(T2) - tf.log(T2_l), -1) )
 
     T = loss_0 + FLAGS.one_hop_weight * loss_1 + FLAGS.two_hop_weight * loss_2
 
@@ -168,6 +169,27 @@ def walking_penalty_matching(logit, affinity_matrix, labeled_logit, labeled_affi
     penalty = T  + FLAGS.visit_loss_weight * class_ent
     return penalty
 
+def walking_penalty_multi(logit, affinity_matrix):
+    shape = tf.shape(logit)
+    npoints = tf.to_float(shape[0])
+    nclasses = tf.to_float(shape[1])
+    c = FLAGS.graph_smoothing
+
+    point_prob = (1-c) * tf.nn.softmax(logit, 1) + c * tf.ones(shape)/nclasses
+    class_prob = (1-c) * tf.nn.softmax(logit, 0) + c * tf.ones(shape)/npoints
+    T = tf.diag_part(tf.matmul(tf.transpose(class_prob), point_prob))
+    T_0 = tf.log(T)
+    unlabelled_transition = tf.to_float(tf.nn.softmax(affinity_matrix, 1))
+
+    landing_probs = []
+    landing_probs.append(T)
+    T = tf.transpose(class_prob)
+    for i in range(walk_length-1):
+
+        T = tf.matmul(T, unlabelled_transition)
+        landing_probs.append(tf.diag_part(tf.matmul(T, point_prob)))
+
+    return  landing_probs
 
 def get_normalized_vector(d):
     with tf.name_scope('Normalize-vector'):
@@ -178,6 +200,6 @@ def get_normalized_vector(d):
 
 if __name__ == '__main__':
 
-    x = [[1.0 , 1.0], [1.0, 1.0]]
+    x = np.zeros([55, 2])
     with tf.Session() as sess:
         print(entropy_y_x(x).eval())

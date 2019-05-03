@@ -95,12 +95,13 @@ from fewshot.models.basic_model_VAT import BasicModelVAT
 from fewshot.models.basic_model_VAT_ENT import BasicModelVAT_ENT, BasicModelENT
 from fewshot.models.basic_model_VAT import BasicModelVAT_Prototypes
 from fewshot.models.VAT_refine_model import RefineModelVAT, RefineModelVAT_Prototypes
-from fewshot.models.model_pairwise import PairwiseModel
+from fewshot.models.BasicLP import BasicLP
 from fewshot.models.measure import batch_apk
 from fewshot.models.model_factory import get_model
 from fewshot.utils import logger
 from fewshot.utils.experiment_logger import ExperimentLogger
 from fewshot.utils.lr_schedule import FixedLearnRateScheduler
+from stats import *
 from tqdm import tqdm
 
 log = logger.get()
@@ -122,6 +123,7 @@ flags.DEFINE_string("dataset", "omniglot", "Dataset name")
 flags.DEFINE_string("model", "basic", "Model name")
 flags.DEFINE_string("pretrain", None, "Model pretrain path")
 flags.DEFINE_bool("continue_train", False, "model trained further")
+flags.DEFINE_bool("stats", False, "give out episode stats")
 flags.DEFINE_string("results", "./results", "Checkpoint save path")
 
 FLAGS = tf.flags.FLAGS
@@ -205,7 +207,7 @@ def evaluate(sess, model, meta_dataset, num_episodes=FLAGS.num_eval_episode):
       train_writer.add_summary(summaries, neval)
 
     y_pred = results[0]
-    y_pred = np.argmax(y_pred, axis=2)
+    y_pred = np.argmax(y_pred, axis=-1)
     _ncorr = np.equal(y_pred, batch.y_test).sum()
     ncorr += _ncorr
     ntotal += batch.y_test.size
@@ -390,8 +392,8 @@ def main():
   sconfig.gpu_options.allow_growth = True
   with tf.Session(config=sconfig) as sess:
     if FLAGS.pretrain is not None:
-      list = [n for n in tf.all_variables() if "optimizer" not in n.name.lower()]
-      # print(list)
+      NotOKlist = ('optimizer', 'training')
+      list = [n for n in tf.all_variables() if not any(s in n.name.lower() for s in NotOKlist)]
 
       ckpt = tf.train.latest_checkpoint(
           os.path.join(FLAGS.results, FLAGS.pretrain))
@@ -399,6 +401,12 @@ def main():
       saver.restore(sess, ckpt)
       if FLAGS.continue_train:
         train(sess, config, m, meta_train_dataset, mvalid, meta_test_dataset)
+      if FLAGS.stats:
+        print('generate stats ---------------\n\n\n\n')
+        basic_stats(sess, mvalid, meta_test_dataset)
+        # graph_stats(sess, mvalid, meta_test_dataset)
+        print("generated stats")
+        exit(0)
     else:
       sess.run(tf.global_variables_initializer())
       train(sess, config, m, meta_train_dataset, mvalid, meta_test_dataset)

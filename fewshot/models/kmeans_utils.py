@@ -154,3 +154,21 @@ def assign_cluster_soft_mask(cluster_centers, data, mask):
   prob = tf.nn.softmax(logits)  # Use softmax distance.
   prob = tf.reshape(prob, [bsize, ndata, ncluster]) * mask
   return prob, mask
+
+
+def get_cov(c):
+  npoints = tf.to_float(tf.shape(c)[0])
+  mean = tf.reduce_mean(c, axis=0, keep_dims=True)
+  c = c - mean
+  cov = tf.matmul(tf.transpose(c), c) / npoints
+  return tf.diag_part(cov)
+
+def gaussian_prob(mean, cov, points):
+  pass
+
+def compute_gmm_logits(cluster_centers, data, cluster_points):
+  nway = tf.shape(cluster_centers)[1]
+  cov = []
+  for i in range(nway):
+    c = cluster_points[i]
+    cov[i].append(get_cov(c))

@@ -90,6 +90,16 @@ class KMeansRefineDistractorMSV3Config(BasicConfig):
     self.model_class = "kmeans-refine-mask"
     self.num_cluster_steps = 1
 
+
+@RegisterConfig("mini-imagenet", "basic-LP")
+class BasicLP(BasicConfig):
+
+  def __init__(self):
+    super(BasicLP, self).__init__()
+    self.name = "mini-imagenet_basic-LP"
+    self.model_class = "basic-LP"
+
+
 @RegisterConfig("mini-imagenet", "basic-VAT")
 class BasicVAT(BasicConfig):
 
@@ -120,6 +130,9 @@ class BasicENTConfig(BasicConfig):
     self.ENT_weight = 1.0
     self.ENT_step_size = 2.5
     self.max_train_steps = 120000
+    self.stop_grad_unlbl = False
+    self.stop_grad_lbl  = True
+    self.stop_grad_lbl_logits = True
 
 
 

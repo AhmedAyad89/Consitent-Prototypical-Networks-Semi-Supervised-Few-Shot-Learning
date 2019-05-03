@@ -15,6 +15,7 @@ from fewshot.utils import logger
 from fewshot.utils.debug import debug_identity
 from fewshot.models.VAT_utils import *
 
+
 l2_norm = lambda t: tf.sqrt(tf.reduce_sum(tf.pow(t, 2)))
 log = logger.get()
 
@@ -73,14 +74,21 @@ class BasicModelENT(RefineModel):
 
 		s = tf.shape(logits)
 		s = s[0]
-		p = tf.stop_gradient(self.h_unlabel)
+
+		if (config.stop_grad_unlbl):
+			p = tf.stop_gradient(self.h_unlabel)
+		else:
+			p = self.h_unlabel
 		affinity_matrix = compute_logits(p, p) - (tf.eye(s, dtype=tf.float32) * 1000.0)
 
 		s = tf.shape(self._logits[0][0])
 		s = s[0]
-		p = tf.stop_gradient(self.h_test[0])
+		if (config.stop_grad_lbl):
+			p = tf.stop_gradient(self.h_test[0])
+		else:
+			p = self.h_test[0]
 		labeled_affinity_matrix = compute_logits(p, p) - (tf.eye(s, dtype=tf.float32) * 1000.0)
-		labeled_logits = tf.stop_gradient(self._logits[0][0])
+		labeled_logits = self._logits[0][0]
 
 		ENT_loss = walking_penalty_matching(logits, affinity_matrix, labeled_logits, labeled_affinity_matrix)
 		loss += ENT_weight * ENT_loss
