@@ -125,6 +125,7 @@ flags.DEFINE_string("pretrain", None, "Model pretrain path")
 flags.DEFINE_bool("continue_train", False, "model trained further")
 flags.DEFINE_bool("stats", False, "give out episode stats")
 flags.DEFINE_string("results", "./results", "Checkpoint save path")
+flags.DEFINE_string("comment"," ", "comment for the logs" )
 
 FLAGS = tf.flags.FLAGS
 log = logger.get()

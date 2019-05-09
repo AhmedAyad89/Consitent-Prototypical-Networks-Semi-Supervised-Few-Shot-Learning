@@ -103,8 +103,10 @@ class BasicModelENT(RefineModel):
 			s = tf.shape(logits_1)[0]
 			affinity_matrix_1 = compute_logits(p_1, p_1) - (tf.eye(s, dtype=tf.float32) * 1000.0)
 			affinity_matrix_2 = compute_logits(p_2, p_2) - (tf.eye(s, dtype=tf.float32) * 1000.0)
-			ENT_loss = walking_penalty_matching(logits_1, affinity_matrix_1, logits_2, affinity_matrix_2)
-
+			# ENT_loss = walking_penalty_matching(logits_1, affinity_matrix_1, logits_2, affinity_matrix_2)
+			s = tf.shape(self._unlabel_logits)[0]
+			affinity_matrix = compute_logits(p, p) - (tf.eye(s, dtype=tf.float32) * 1000.0)
+			ENT_loss = walking_penalty_matching_tournament(self._unlabel_logits, affinity_matrix)
 
 		loss += ENT_weight * ENT_loss
 
