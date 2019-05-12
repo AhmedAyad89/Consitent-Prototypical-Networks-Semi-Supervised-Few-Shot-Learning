@@ -106,8 +106,8 @@ def landing_probs(logit, affinity_matrix):
         npoints = tf.to_float(shape[0])
         nclasses = tf.to_float(shape[1])
         c = FLAGS.graph_smoothing
-        logit = tf.reshape(logit, [-1, 10])
-        affinity_matrix = tf.reshape(affinity_matrix, [50, 50])
+        logit = tf.reshape(logit, [-1, 5])
+        affinity_matrix = tf.reshape(affinity_matrix, [25, 25])
         point_prob = (1-c) * tf.nn.softmax(logit, 1) + c * tf.ones(shape)/nclasses
         class_prob = (1-c) * tf.nn.softmax(logit, 0) + c * tf.ones(shape)/npoints
         T0 = tf.matmul(tf.transpose(class_prob), point_prob)
@@ -178,8 +178,8 @@ def walking_penalty_matching(logit, affinity_matrix, labeled_logit, labeled_affi
 
 def construct_partitioned_tournament(logit, affinity_matrix, h):
     shape = tf.shape(logit)
-    npoints = 100 # tf.to_float(shape[0])
-    nclasses = 10 #tf.to_float(shape[1])
+    npoints = 50 # tf.to_float(shape[0])
+    nclasses = 5 #tf.to_float(shape[1])
     sample_size = npoints #tf.ceil(npoints / nclasses)
     sample_size = tf.to_int32(sample_size)
     logits = [None] * 4

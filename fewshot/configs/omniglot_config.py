@@ -118,7 +118,7 @@ class BasicENTConfig(BasicConfig):
     super(BasicENTConfig, self).__init__()
     self.name = "omniglot_basic-ENT-KL"
     self.model_class = "basic-ENT"
-    self.ENT_weight = 2.0
+    self.ENT_weight = 1.5
     self.ENT_step_size = 1.0
     self.max_train_steps = 20000
     self.stop_grad_unlbl = False

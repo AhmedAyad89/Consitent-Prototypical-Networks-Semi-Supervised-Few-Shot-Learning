@@ -127,7 +127,7 @@ class BasicENTConfig(BasicConfig):
     super(BasicENTConfig, self).__init__()
     self.name = "mini-imagenet_basic-ENT"
     self.model_class = "basic-ENT"
-    self.ENT_weight = 1.75
+    self.ENT_weight = 0.75
     self.ENT_step_size = 2.5
     self.max_train_steps = 120000
     self.stop_grad_unlbl = False
