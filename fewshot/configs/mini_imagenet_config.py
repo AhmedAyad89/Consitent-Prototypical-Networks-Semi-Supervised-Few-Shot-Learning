@@ -146,6 +146,15 @@ class BasicMatchingENTConfig(BasicConfig):
     self.stop_grad_lbl_logits = True
     self.match_to_labeled = False
 
+@RegisterConfig("mini-imagenet", "basic-ENT-graphVAT")
+class BasicENTGraphVATConfig(BasicVAT):
+  def __init__(self):
+    super().__init__()
+    self.name = "mini-imagenet_basic-ENT-graphVAT"
+    self.model_class = "basic-ENT-graphVAT"
+    self.ENT_weight = 1.0
+    self.ENT_weight = 1.5
+    self.ENT_step_size = 1.0
 
 
 @RegisterConfig("mini-imagenet-all", "basic-VAT-ENT")

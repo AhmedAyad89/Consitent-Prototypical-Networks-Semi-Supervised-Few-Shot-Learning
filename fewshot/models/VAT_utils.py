@@ -5,7 +5,7 @@ from itertools import combinations
 from fewshot.models.kmeans_utils import compute_logits
 
 FLAGS = tf.flags.FLAGS
-tf.app.flags.DEFINE_float('VAT_epsilon', 100.0, "norm length for (virtual) adversarial training ")
+tf.app.flags.DEFINE_float('VAT_epsilon', 8.0, "norm length for (virtual) adversarial training ")
 tf.app.flags.DEFINE_integer('VAT_num_power_iterations', 1, "the number of power iterations")
 tf.app.flags.DEFINE_float('VAT_xi', 1e-2, "small constant for finite difference")
 tf.app.flags.DEFINE_float('graph_smoothing', 0.1, 'constant for smoothing the random walk graph')

@@ -95,6 +95,7 @@ from fewshot.models.basic_model_VAT import BasicModelVAT
 from fewshot.models.basic_model_VAT_ENT import BasicModelVAT_ENT, BasicModelENT, BasicModelMatchingENT
 from fewshot.models.basic_model_VAT import BasicModelVAT_Prototypes
 from fewshot.models.VAT_refine_model import RefineModelVAT, RefineModelVAT_Prototypes
+from fewshot.models.basic_model_ENT_graphVAT import BasicModelENTGraphVAT
 from fewshot.models.BasicLP import BasicLP
 from fewshot.models.measure import batch_apk
 from fewshot.models.model_factory import get_model
