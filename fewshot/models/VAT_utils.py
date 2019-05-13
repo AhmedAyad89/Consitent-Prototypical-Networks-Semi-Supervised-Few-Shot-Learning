@@ -14,7 +14,7 @@ tf.app.flags.DEFINE_float('one_hop_weight', 1.0, "weight for the one hop walk")
 tf.app.flags.DEFINE_float('two_hop_weight', 1.0, "weight for the two hop walk")
 tf.app.flags.DEFINE_float('three_hop_weight', 1.0, "weight for the three hop walk")
 tf.app.flags.DEFINE_float('matching_graph_sample_ratio', 0.5, "ratio of unlabelled points to sample for a matching graph")
-tf.app.flags.DEFINE_integer('ngraphs', 4, "Number of matching graphs to construct")
+tf.app.flags.DEFINE_integer('ngraphs', 2, "Number of matching graphs to construct")
 tf.app.flags.DEFINE_integer('nhops', 4, "Max number of hops in a random walk")
 
 def entropy_y_x(logit):
@@ -72,42 +72,14 @@ def kl_divergence_with_logit2(q_logit, p_logit):
                 qlogp = tf.reduce_mean(tf.reduce_sum(q * logsoftmax(p_logit), 1))
         return qlogq - qlogp
 
-def joint_divergence(logit):
-        shape = tf.shape(logit)
-        npoints = tf.to_float(shape[0])
-        nclasses = tf.to_float(shape[1])
-        point_prob = tf.nn.softmax(logit, 1) / npoints
-        class_prob = tf.nn.softmax(logit, 0) / nclasses
-
-        div = -tf.reduce_mean(point_prob * tf.log(class_prob))
-        return div
-
-def consistency_penalty(logit):
-        shape = tf.shape(logit)
-        npoints = tf.to_float(shape[0])
-        nclasses = tf.to_float(shape[1])
-        point_prob = tf.nn.softmax(logit, 1)
-        class_prob = tf.nn.softmax(logit, 0)
-
-        point_ent = tf.reduce_mean(point_prob, 0)
-        u_p = tf.ones(shape=tf.shape(point_ent)) / nclasses
-        point_ent = -tf.reduce_sum(u_p * tf.log(point_ent))
-
-        class_ent = tf.reduce_mean(class_prob, 1)
-        u_c = tf.ones(shape=tf.shape(class_ent)) / npoints
-        class_ent = -tf.reduce_sum(u_c * tf.log(class_ent))
-
-        # point_ent = tf.Print(point_ent, [point_ent,  tf.reduce_mean(point_prob, 0), u],
-        #                      message='\n----------------\n', summarize=5)
-        return point_ent+class_ent
-
 def landing_probs(logit, affinity_matrix):
         shape = tf.shape(logit)
         npoints = tf.to_float(shape[0])
         nclasses = tf.to_float(shape[1])
+        affinity_dim = shape[0] / 2
         c = FLAGS.graph_smoothing
-        logit = tf.reshape(logit, [-1, 5])
-        affinity_matrix = tf.reshape(affinity_matrix, [25, 25])
+        logit = tf.reshape(logit, [-1, shape[1]])
+        # affinity_matrix = tf.reshape(affinity_matrix, [shape[0], shape[0]])
         point_prob = (1-c) * tf.nn.softmax(logit, 1) + c * tf.ones(shape)/nclasses
         class_prob = (1-c) * tf.nn.softmax(logit, 0) + c * tf.ones(shape)/npoints
         T0 = tf.matmul(tf.transpose(class_prob), point_prob)
@@ -128,26 +100,16 @@ def walking_penalty(logit, affinity_matrix):
         nclasses = tf.to_float(shape[1])
         c = FLAGS.graph_smoothing
 
-        T0, T1, T2 = landing_probs(logit, affinity_matrix)
-        T_0 = tf.diag_part(T0)
-        T_0 = tf.log(T_0)
-        T_1 = tf.diag_part(T1)
-        T_1 = tf.log(T_1)
-        T_2 = tf.diag_part(T2)
-        T_2 = tf.log(T_2)
-        T = T_0 + FLAGS.one_hop_weight * T_1 + FLAGS.two_hop_weight * T_2
+        landing_probs_list = landing_probs(logit, affinity_matrix)
+        loss = identity_matching_loss(landing_probs_list)
 
         class_prob = (1-c) * tf.nn.softmax(logit, 0) + c * tf.ones(shape)/npoints
         class_ent = tf.reduce_mean(class_prob, 1)
         u_c = tf.ones(shape=tf.shape(class_ent)) / npoints
         class_ent = -tf.reduce_sum(u_c * tf.log(class_ent))
 
-        # point_ent = tf.reduce_mean(point_prob, 0)
-        # u_p = tf.ones(shape=tf.shape(point_ent)) / nclasses
-        # point_ent = -tf.reduce_sum(u_p * tf.log(point_ent))
-
-        penalty = -tf.reduce_mean(T) + FLAGS.visit_loss_weight * class_ent
-        return penalty
+        penalty = loss + FLAGS.visit_loss_weight * class_ent
+        return penalty, loss, landing_probs_list
 
 def walking_penalty_matching(logit, affinity_matrix, labeled_logit, labeled_affinity):
         shape = tf.shape(logit)
@@ -178,8 +140,8 @@ def walking_penalty_matching(logit, affinity_matrix, labeled_logit, labeled_affi
 
 def construct_partitioned_tournament(logit, affinity_matrix, h):
     shape = tf.shape(logit)
-    npoints = 50 # tf.to_float(shape[0])
-    nclasses = 5 #tf.to_float(shape[1])
+    npoints = tf.to_float(shape[0])
+    nclasses = tf.to_float(shape[1])
     sample_size = npoints #tf.ceil(npoints / nclasses)
     sample_size = tf.to_int32(sample_size)
     logits = [None] * 4
@@ -238,7 +200,7 @@ def walking_penalty_matching_tournament(logit, affinity_matrix, h ):
         # arg1 = i[flip]
         # arg2 = i[(flip+1)%2]
         count += 1
-        loss+= KL_matching_loss(landing_probs_list[i], landing_probs_list[(i+1) % len(landing_probs_list)])
+        loss+= cross_entropy_matching_loss(landing_probs_list[i], landing_probs_list[(i+1) % len(landing_probs_list)])
         #loss+= KL_matching_loss(i[1], i[0])
     print(count)
     # loss = KL_matching_loss(landing_probs_list[0], landing_probs_list[2]) + KL_matching_loss(landing_probs_list[1], landing_probs_list[3])
@@ -255,26 +217,26 @@ def walking_penalty_matching_tournament(logit, affinity_matrix, h ):
     return penalty, loss, landing_probs_list
 
 def walking_penalty_multi(logit, affinity_matrix):
-        shape = tf.shape(logit)
-        npoints = tf.to_float(shape[0])
-        nclasses = tf.to_float(shape[1])
-        c = FLAGS.graph_smoothing
+    shape = tf.shape(logit)
+    npoints = tf.to_float(shape[0])
+    nclasses = tf.to_float(shape[1])
+    c = FLAGS.graph_smoothing
 
-        point_prob = (1-c) * tf.nn.softmax(logit, 1) + c * tf.ones(shape)/nclasses
-        class_prob = (1-c) * tf.nn.softmax(logit, 0) + c * tf.ones(shape)/npoints
-        T = tf.diag_part(tf.matmul(tf.transpose(class_prob), point_prob))
-        T_0 = tf.log(T)
-        unlabelled_transition = tf.to_float(tf.nn.softmax(affinity_matrix, 1))
+    point_prob = (1-c) * tf.nn.softmax(logit, 1) + c * tf.ones(shape)/nclasses
+    class_prob = (1-c) * tf.nn.softmax(logit, 0) + c * tf.ones(shape)/npoints
+    T = tf.diag_part(tf.matmul(tf.transpose(class_prob), point_prob))
+    T_0 = tf.log(T)
+    unlabelled_transition = tf.to_float(tf.nn.softmax(affinity_matrix, -1))
 
-        landing_probs = []
-        landing_probs.append(T)
-        T = tf.transpose(class_prob)
-        for i in range(FLAGS.nhops-1):
+    landing_probs = []
+    landing_probs.append(T)
+    T = tf.transpose(class_prob)
+    for i in range(FLAGS.nhops-1):
 
-                T = tf.matmul(T, unlabelled_transition)
-                landing_probs.append(tf.diag_part(tf.matmul(T, point_prob)))
+            T = tf.matmul(T, unlabelled_transition)
+            landing_probs.append(tf.diag_part(tf.matmul(T, point_prob)))
 
-        return  landing_probs
+    return  landing_probs
 
 def get_normalized_vector(d):
         with tf.name_scope('Normalize-vector'):
@@ -287,7 +249,7 @@ def KL_matching_loss(landing_1, landing_2):
     loss = []
     for i in range(FLAGS.nhops):
         l =  -tf.reduce_mean( tf.reduce_sum(landing_1[i] * (tf.log(landing_2[i]) - tf.log(landing_1[i])), -1) )
-        l += 0.5 * -tf.reduce_mean(tf.log(tf.diag_part(landing_1[i])))
+        # l += 0.5 * -tf.reduce_mean(tf.log(tf.diag_part(landing_1[i])))
         loss.append(l)
 
     loss_total = loss[0] + FLAGS.one_hop_weight * loss[1] + FLAGS.two_hop_weight * loss[2] + FLAGS.three_hop_weight * loss[3]
@@ -301,6 +263,16 @@ def cross_entropy_matching_loss(landing_1, landing_2):
 
     loss_total = loss[0] + FLAGS.one_hop_weight * loss[1] + FLAGS.two_hop_weight * loss[2] + FLAGS.three_hop_weight * loss[3]
     return loss_total
+
+def identity_matching_loss(landing):
+  loss = []
+  for i in range(FLAGS.nhops):
+    l =  -tf.reduce_mean(tf.log(tf.diag_part(landing[i])))
+    loss.append(l)
+
+  loss_total = loss[0] + FLAGS.one_hop_weight * loss[1] + FLAGS.two_hop_weight * loss[2] + FLAGS.three_hop_weight * \
+               loss[3]
+  return loss_total
 
 
 if __name__ == '__main__':

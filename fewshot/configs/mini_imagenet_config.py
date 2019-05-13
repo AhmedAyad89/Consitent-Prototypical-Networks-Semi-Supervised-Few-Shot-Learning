@@ -130,6 +130,17 @@ class BasicENTConfig(BasicConfig):
     self.ENT_weight = 0.75
     self.ENT_step_size = 2.5
     self.max_train_steps = 120000
+
+
+@RegisterConfig("mini-imagenet", "basic-matching-ENT")
+class BasicMatchingENTConfig(BasicConfig):
+  def __init__(self):
+    super().__init__()
+    self.name = "mini-imagenet_basic-matching-ENT"
+    self.model_class = "basic-matching-ENT"
+    self.ENT_weight = 0.75
+    self.ENT_step_size = 2.5
+    self.max_train_steps = 120000
     self.stop_grad_unlbl = False
     self.stop_grad_lbl  = True
     self.stop_grad_lbl_logits = True

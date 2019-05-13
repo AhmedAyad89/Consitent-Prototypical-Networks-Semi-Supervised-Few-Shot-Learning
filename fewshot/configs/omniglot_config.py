@@ -115,9 +115,20 @@ class BasicVAT_ENTConfig(BasicVATConfig):
 @RegisterConfig("omniglot", "basic-ENT")
 class BasicENTConfig(BasicConfig):
   def __init__(self):
-    super(BasicENTConfig, self).__init__()
-    self.name = "omniglot_basic-ENT-KL"
+    super().__init__()
+    self.name = "omniglot_basic-ENT"
     self.model_class = "basic-ENT"
+    self.ENT_weight = 1.5
+    self.ENT_step_size = 1.0
+    self.max_train_steps = 20000
+
+
+@RegisterConfig("omniglot", "basic-matching-ENT")
+class BasicMatchingENTConfig(BasicConfig):
+  def __init__(self):
+    super().__init__()
+    self.name = "omniglot_basic-matching-ENT-CE"
+    self.model_class = "basic-matching-ENT"
     self.ENT_weight = 1.5
     self.ENT_step_size = 1.0
     self.max_train_steps = 20000
@@ -125,6 +136,7 @@ class BasicENTConfig(BasicConfig):
     self.stop_grad_lbl  = True
     self.stop_grad_lbl_logits = True
     self.match_to_labeled = False
+    self.non_matching = False
 
 
 @RegisterConfig("omniglot", "basic-VAT-prototypes")

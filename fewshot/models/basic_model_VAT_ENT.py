@@ -55,9 +55,66 @@ class BasicModelVAT_ENT(BasicModelVAT):
 
 
 #################################################################################
-
 @RegisterModel("basic-ENT")
 class BasicModelENT(RefineModel):
+	def predict(self):
+		super(RefineModel, self).predict()
+		with tf.name_scope('Predict/VAT'):
+			self._unlabel_logits = compute_logits(self._ssl_protos, self.h_unlabel)
+
+	def get_train_op(self, logits, y_test):
+		loss, train_op = RefineModel.get_train_op(self, logits, y_test)
+		classification_loss = loss
+
+		config = self.config
+		ENT_weight = config.ENT_weight
+		ENT_step_size = config.ENT_step_size
+
+		logits = self._unlabel_logits
+
+		s = tf.shape(logits)
+		s = s[0]
+		p = self.h_unlabel
+		affinity_matrix = compute_logits(p, p) - (tf.eye(s, dtype=tf.float32) * 1000.0)
+		# logits = tf.Print(logits, [tf.shape(point_logits)])
+
+		ENT_loss, rw_loss, landing_probs_list = walking_penalty(logits, affinity_matrix)
+		loss += ENT_weight * ENT_loss
+
+		ENT_opt = tf.train.AdamOptimizer(ENT_step_size * self.learn_rate, name="Entropy-optimizer")
+		ENT_grads_and_vars = ENT_opt.compute_gradients(loss)
+		train_op = ENT_opt.apply_gradients(ENT_grads_and_vars)
+
+		classification_grads = ENT_opt.compute_gradients(classification_loss)
+		rw_grads = ENT_opt.compute_gradients(rw_loss)
+		count = 0
+		for gradient, variable in rw_grads:
+			if gradient is None:
+				gradient = tf.constant(0.0)
+				count+=1
+			self.adv_summaries.append(tf.summary.scalar("ENT/gradients/" + variable.name, l2_norm(gradient), family="Grads"))
+			self.adv_summaries.append(tf.summary.histogram("ENT/gradients/" + variable.name, gradient, family="Grads"))
+
+		self.summaries.append(tf.summary.scalar('RW loss', rw_loss))
+		self.summaries.append(tf.summary.scalar('Zero grad count', count))
+
+		self.adv_summaries.append(tf.summary.histogram('Correct landing hist zero hop', tf.diag_part(landing_probs_list[0]), family='landing probs'))
+		self.adv_summaries.append(tf.summary.histogram('Correct landing hist one hop', tf.diag_part(landing_probs_list[1]), family='landing probs'))
+		self.adv_summaries.append(tf.summary.histogram('Correct landing hist two hop', tf.diag_part(landing_probs_list[2]), family='landing probs'))
+
+		self.adv_summaries.append(tf.summary.histogram('all landing histo', landing_probs_list, family='landing probs'))
+		self.adv_summaries.append(tf.summary.scalar('avg correct prob zero hop', tf.reduce_mean(tf.diag_part(landing_probs_list[0])), family='landing probs'))
+		self.adv_summaries.append(tf.summary.scalar('avg correct prob one hop', tf.reduce_mean(tf.diag_part(landing_probs_list[1])), family='landing probs'))
+		self.adv_summaries.append(tf.summary.scalar('avg correct prob two hop', tf.reduce_mean(tf.diag_part(landing_probs_list[2])), family='landing probs'))
+
+
+
+		return loss, train_op
+
+
+#################################################################################
+@RegisterModel("basic-matching-ENT")
+class BasicModelMatchingENT(RefineModel):
 	def predict(self):
 		super(RefineModel, self).predict()
 		with tf.name_scope('Predict/VAT'):
@@ -92,6 +149,8 @@ class BasicModelENT(RefineModel):
 			labeled_affinity_matrix = compute_logits(p, p) - (tf.eye(s, dtype=tf.float32) * 1000.0)
 			labeled_logits = self._logits[0][0]
 			ENT_loss = walking_penalty_matching(logits, affinity_matrix, labeled_logits, labeled_affinity_matrix)
+		elif(config.non_matching):
+			pass
 		else:
 			if (config.stop_grad_unlbl):
 				p = tf.stop_gradient(self.h_unlabel)
