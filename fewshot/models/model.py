@@ -88,6 +88,8 @@ class Model(object):
       # Whether the candidate is relevant.
       self._y_test = tf.placeholder(tf.int64, [None, None], name="y_test")
 
+      self.selected_classes = tf.placeholder(tf.int64, [self._nway])
+
       if self._nway > 1:
         self._y_train_one_hot = tf.one_hot(self._y_train, self._nway)
         self._y_test_one_hot = tf.one_hot(self._y_test, self._nway)

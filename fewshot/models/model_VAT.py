@@ -31,6 +31,7 @@ class ModelVAT(RefineModel):
 
 		super(ModelVAT, self).__init__(config, nway, nshot, num_unlabel, candidate_size,
 																	 is_training, dtype)
+		self.vat_loss = self.virtual_adversarial_loss(self.x_unlabel_flat, self._unlabel_logits)
 
 
 
@@ -49,10 +50,9 @@ class ModelVAT(RefineModel):
 			self.adv_summaries.append(tf.summary.histogram('unlabel weights', weights))
 
 			vat_loss = self.virtual_adversarial_loss(self.x_unlabel_flat, self._unlabel_logits)\
-							 + labeled_weight * self.virtual_adversarial_loss(labeled_flat, labeled_logits)
+							  + labeled_weight * self.virtual_adversarial_loss(labeled_flat, labeled_logits)
 
-
-		vat_opt = tf.train.AdamOptimizer(VAT_step_size * self.learn_rate, name="VAT_optimizer")
+		vat_opt = tf.train.AdamOptimizer(VAT_step_size * self.learn_rate, name="ENT_optimizer")
 		vat_grads_and_vars = vat_opt.compute_gradients(vat_loss)
 		vat_train_op = vat_opt.apply_gradients(vat_grads_and_vars)
 

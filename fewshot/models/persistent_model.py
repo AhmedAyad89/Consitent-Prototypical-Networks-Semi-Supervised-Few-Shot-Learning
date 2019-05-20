@@ -8,6 +8,7 @@ from fewshot.models.kmeans_utils import compute_logits, assign_cluster
 from fewshot.models.model import Model
 from fewshot.models.basic_model import BasicModel
 from fewshot.models.refine_model import RefineModel
+from fewshot.models.basic_model_VAT_ENT import BasicModelENT
 from fewshot.models.model_factory import RegisterModel
 from fewshot.models.nnlib import concat, weight_variable
 from fewshot.utils import logger
@@ -21,7 +22,7 @@ def distance(x, y):
 	return tf.reduce_mean(tf.reduce_sum(tf.square(x - y), [-1]))
 
 @RegisterModel("persistent")
-class PersistentModel(BasicModel):
+class PersistentModel(RefineModel):
 
 	def __init__(self, config, nway = 2, nshot = 1, num_test = 30,
 							 is_training = True, dtype = tf.float32):
@@ -35,56 +36,73 @@ class PersistentModel(BasicModel):
 		reg = config.persistent_reg
 		trainable = config.trainable
 		d = config.proto_dim
-		shape = [1, config.n_train_classes, config.proto_dim]
+		shape = [config.n_train_classes, config.proto_dim]
 		self._persistent_protos = tf.get_variable(
 				name='persistent_protos',
 				shape= shape,
 				initializer=tf.random_normal_initializer(),
 				regularizer=reg,
 				dtype=tf.float32,
-				trainable=trainable)
+				trainable=False)
 
 		super().__init__(config,  nway, nshot, num_test, is_training, dtype)
 
-	def classification_train_op(self):
-		with tf.name_scope('Classification_train_op'):
-			config = self.config
-			classification_weight = config.classification_weight
-			features = self.phi(self.training_data, update_batch_stats=False)
+	def predict(self):
+		super(RefineModel, self).predict()
+		with tf.name_scope('Predict/VAT'):
+			self._unlabel_logits = compute_logits(tf.expand_dims(self._persistent_protos,axis=0), self.h_unlabel)
 
-			logits = compute_logits(self._persistent_protos, features)
-			# probs = tf.nn.softmax(logits/1000)
-			# logits = tf.Print(logits, [self.training_labels],summarize=50)
-			loss = tf.nn.sparse_softmax_cross_entropy_with_logits (logits=logits/200, labels=self.training_labels)
-			loss = tf.reduce_mean(loss)
-			opt = tf.train.AdamOptimizer(classification_weight * self.learn_rate, name='Classification-Optimizer')
-			grads_and_vars = opt.compute_gradients(loss)
-			train_op = opt.apply_gradients(grads_and_vars)
-			self.adv_summaries.append(tf.summary.scalar("loss", loss, family='classification'))
+	# def classification_train_op(self):
+	# 	with tf.name_scope('Classification_train_op'):
+	# 		config = self.config
+	# 		classification_weight = config.classification_weight
+	# 		features = self.phi(self.training_data, update_batch_stats=False)
+	#
+	# 		logits = compute_logits(self._persistent_protos, features)
+	# 		# probs = tf.nn.softmax(logits/1000)
+	# 		# logits = tf.Print(logits, [self.training_labels],summarize=50)
+	# 		loss = tf.nn.sparse_softmax_cross_entropy_with_logits (logits=logits/200, labels=self.training_labels)
+	# 		loss = tf.reduce_mean(loss)
+	# 		opt = tf.train.AdamOptimizer(classification_weight * self.learn_rate, name='Classification-Optimizer')
+	# 		grads_and_vars = opt.compute_gradients(loss)
+	# 		train_op = opt.apply_gradients(grads_and_vars)
+	# 		self.adv_summaries.append(tf.summary.scalar("loss", loss, family='classification'))
+	#
+	# 		for gradient, variable in grads_and_vars:
+	# 			if gradient is None:
+	# 				gradient = tf.constant(0.0)
+	# 			self.adv_summaries.append(tf.summary.scalar("gradients/" + variable.name, l2_norm(gradient), family="classification"))
+	# 			# self.adv_summaries.append(tf.summary.scalar("variables/" + variable.name, l2_norm(variable), family="VARS"))
+	# 			# self.adv_summaries.append(tf.summary.histogram("gradients/" + variable.name, gradient, family="Grads"))
+	#
+	#
+	# 	return loss, train_op
 
-			for gradient, variable in grads_and_vars:
-				if gradient is None:
-					gradient = tf.constant(0.0)
-				self.adv_summaries.append(tf.summary.scalar("gradients/" + variable.name, l2_norm(gradient), family="classification"))
-				# self.adv_summaries.append(tf.summary.scalar("variables/" + variable.name, l2_norm(variable), family="VARS"))
-				# self.adv_summaries.append(tf.summary.histogram("gradients/" + variable.name, gradient, family="Grads"))
-
-
-		return loss, train_op
+	def update_persistent_protos(self):
+		idx = [1,2,3,4,5]
+		idx0 = [0]
+		# self._persistent_protos = tf.squeeze(self._persistent_protos)
+		self._persistent_protos = tf.scatter_mul(self._persistent_protos, indices=self.selected_classes, updates=0.1)
+		self._persistent_protos = tf.scatter_add(self._persistent_protos,
+																						 indices=self.selected_classes,
+																						 updates=0.9 * tf.squeeze(self.protos))
+			# self._persistent_protos[idx0, idx].assign(self.protos)
 
 	def get_train_op(self, logits, y_test):
-			loss, train_op = super().get_train_op(logits, y_test)
-			classification_loss, classification_op = self.classification_train_op()
+		self.update_persistent_protos()
+		loss, train_op = super().get_train_op(logits, y_test)
+		# loss = tf.Print(loss, [tf.shape(tf.gather(self._persistent_protos, self.selected_classes, axis=1))])
+		# classification_loss, classification_op = self.classification_train_op()
+		# loss = tf.Print(loss, [classification_loss])
+		# train_op = tf.group(train_op, classification_op)
+		# loss += classification_loss
+		# opt = tf.train.AdamOptimizer(self.learn_rate, name='Classification-Optimizer')
+		# grads_and_vars = opt.compute_gradients(loss)
+		# train_op = opt.apply_gradients(grads_and_vars)
+		return loss, train_op
 
-			# loss = tf.Print(loss, [classification_loss])
-			# train_op = tf.group(train_op, classification_op)
-			loss += classification_loss
-			opt = tf.train.AdamOptimizer(self.learn_rate, name='Classification-Optimizer')
-			grads_and_vars = opt.compute_gradients(loss)
-			train_op = opt.apply_gradients(grads_and_vars)
-			return loss, train_op
 
-
+#################################################################################
 
 @RegisterModel("persistent-SSL")
 class PersistentSSLModel(PersistentModel):

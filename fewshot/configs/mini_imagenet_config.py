@@ -219,3 +219,19 @@ class KMeansRefineVAT_ENTConfig(BasicVAT_ENTConfig):
     self.model_class = "kmeans-refine-VAT-ENT"
     self.num_cluster_steps = 1
     self.VAT_ENT_step_size = 2.0
+
+
+
+@RegisterConfig("mini-imagenet", "persistent")
+class PersistentConfig(BasicENTConfig):
+
+  def __init__(self):
+    super().__init__()
+    self.name = "mini-imagenet_persistent"
+    self.model_class = "persistent"
+    self.persistent_reg = None
+    self.trainable = True
+    self.n_train_classes = 4112
+    self.proto_dim = 64
+    self.classification_weight = 0.005
+    self.ENT_weight = 0.25

@@ -219,14 +219,15 @@ class MiniImageNetDataset(object):
     assert self._check_shape(
         total_unlbl, self.al_instance.n_class + self.al_instance.n_distractor,
         self.al_instance.k_unlbl)
-
+    # print(sel_classes)
     return Episode(
         x_train=total_train.data,
         y_train=total_train.labels,
         x_test=total_test.data,
         y_test=total_test.labels,
         x_unlabel=total_unlbl.data,
-        y_unlabel=total_unlbl.labels)
+        y_unlabel=total_unlbl.labels,
+        selected_classes=sel_classes)
 
   def _read_csv(self, csv_filename):
     """ from csv file, store dictionary : class_names -> [name of class_images] """
@@ -416,3 +417,5 @@ class MiniImageNetDatasetAll(MiniImageNetDataset):
                 data=self._read_set(unlbl),
                 labels=np.full([len(unlbl)], 0, dtype=np.int8),
             )
+
+

@@ -97,6 +97,7 @@ from fewshot.models.basic_model_VAT import BasicModelVAT_Prototypes
 from fewshot.models.VAT_refine_model import RefineModelVAT, RefineModelVAT_Prototypes
 from fewshot.models.basic_model_ENT_graphVAT import BasicModelENTGraphVAT
 from fewshot.models.BasicLP import BasicLP
+from fewshot.models.persistent_model import PersistentModel
 from fewshot.models.measure import batch_apk
 from fewshot.models.model_factory import get_model
 from fewshot.utils import logger
@@ -108,14 +109,14 @@ from tqdm import tqdm
 log = logger.get()
 
 flags = tf.flags
-flags.DEFINE_bool("eval", False, "Whether to only run evaluation")
+flags.DEFINE_bool("eval", True, "Whether to only run evaluation")
 flags.DEFINE_bool("use_test", False, "Use the test set or not")
 flags.DEFINE_float("learn_rate", None, "Start learning rate")
 flags.DEFINE_integer("nclasses_eval", 5, "Number of classes for testing")
 flags.DEFINE_integer("nclasses_train", 5, "Number of classes for training")
 flags.DEFINE_integer("nshot", 1, "nshot")
 flags.DEFINE_integer("classification_nshot", 1, "This determines the shot for classification")
-flags.DEFINE_integer("num_eval_episode", 600, "Number of evaluation episodes")
+flags.DEFINE_integer("num_eval_episode", 2400, "Number of evaluation episodes")
 flags.DEFINE_integer("num_test", -1, "Number of test images per episode")
 flags.DEFINE_integer("num_unlabel", 5, "Number of unlabeled for training")
 flags.DEFINE_integer("steps_per_summary", 200, "Number of steps between summary ops")
@@ -166,7 +167,6 @@ def preprocess_batch(batch):
       y_unlabel = np.expand_dims(batch.y_unlabel, 0)
     else:
       y_unlabel = None
-
     return Episode(
         x_train,
         y_train,
@@ -175,7 +175,8 @@ def preprocess_batch(batch):
         x_unlabel=x_unlabel,
         y_unlabel=y_unlabel,
         y_train_str=batch.y_train_str,
-        y_test_str=batch.y_test_str)
+        y_test_str=batch.y_test_str,
+        selected_classes = batch.selected_classes)
   else:
     return batch
 
@@ -287,7 +288,8 @@ def train(sess,
         model.x_train: batch.x_train,
         model.y_train: batch.y_train,
         model.x_test: batch.x_test,
-        model.y_test: batch.y_test
+        model.y_test: batch.y_test,
+        model.selected_classes : batch.selected_classes[:FLAGS.nclasses_train]
     }
     if hasattr(model, '_x_unlabel'):
       if batch.x_unlabel is not None:
@@ -406,18 +408,18 @@ def main():
       if FLAGS.stats:
         print('generate stats ---------------\n\n\n\n')
         basic_stats(sess, mvalid, meta_test_dataset)
-        graph_stats(sess, mvalid, meta_test_dataset)
+        # graph_stats(sess, mvalid, meta_train_dataset)
         print("generated stats")
         exit(0)
     else:
       sess.run(tf.global_variables_initializer())
       train(sess, config, m, meta_train_dataset, mvalid, meta_test_dataset)
 
-    results_train = evaluate(sess, mvalid, meta_train_dataset)
     results_test = evaluate(sess, mvalid, meta_test_dataset)
+    # results_train = evaluate(sess, mvalid, meta_train_dataset)
 
-    log.info("Final train acc {:.3f}% ({:.3f}%)".format(
-        results_train['acc'] * 100.0, results_train['acc_ci'] * 100.0))
+    # log.info("Final train acc {:.3f}% ({:.3f}%)".format(
+    #     results_train['acc'] * 100.0, results_train['acc_ci'] * 100.0))
     log.info("Final test acc {:.3f}% ({:.3f}%)".format(
         results_test['acc'] * 100.0, results_test['acc_ci'] * 100.0))
 

@@ -29,7 +29,8 @@ class Episode(object):
                x_unlabel=None,
                y_unlabel=None,
                y_train_str=None,
-               y_test_str=None):
+               y_test_str=None,
+               selected_classes=None):
     """Creates a miniImageNet episode.
     Args:
       x_train:  [N, ...]. Training data.
@@ -45,6 +46,9 @@ class Episode(object):
     self._y_unlabel = y_unlabel
     self._y_train_str = y_train_str
     self._y_test_str = y_test_str
+    # print(selected_classes, "before assignment")
+    self.selected_classes = selected_classes
+    # print(self.selected_classes, "after assignment")
 
   def next_batch(self):
     return self

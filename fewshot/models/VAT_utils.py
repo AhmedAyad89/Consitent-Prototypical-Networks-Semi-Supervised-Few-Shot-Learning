@@ -15,7 +15,7 @@ tf.app.flags.DEFINE_float('two_hop_weight', 1.0, "weight for the two hop walk")
 tf.app.flags.DEFINE_float('three_hop_weight', 1.0, "weight for the three hop walk")
 tf.app.flags.DEFINE_float('matching_graph_sample_ratio', 0.5, "ratio of unlabelled points to sample for a matching graph")
 tf.app.flags.DEFINE_integer('ngraphs', 2, "Number of matching graphs to construct")
-tf.app.flags.DEFINE_integer('nhops', 4, "Max number of hops in a random walk")
+tf.app.flags.DEFINE_integer('nhops', 10, "Max number of hops in a random walk")
 
 def entropy_y_x(logit):
         with tf.name_scope('entropy_x_y'):
@@ -84,7 +84,6 @@ def landing_probs(logit, affinity_matrix):
         class_prob = (1-c) * tf.nn.softmax(logit, 0) + c * tf.ones(shape)/npoints
         T0 = tf.matmul(tf.transpose(class_prob), point_prob)
         unlabelled_transition = tf.to_float(tf.nn.softmax(affinity_matrix, -1))
-
         landing_probs = []
         landing_probs.append(T0)
         T = tf.transpose(class_prob)

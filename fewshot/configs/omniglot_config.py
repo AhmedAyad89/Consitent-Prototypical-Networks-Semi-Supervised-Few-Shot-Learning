@@ -271,7 +271,7 @@ class KMeansRefineMaskTestConfig(KMeansRefineMaskConfig):
 
 
 @RegisterConfig("omniglot", "persistent")
-class PersistentConfig(BasicConfig):
+class PersistentConfig(BasicENTConfig):
 
   def __init__(self):
     super().__init__()
@@ -282,6 +282,7 @@ class PersistentConfig(BasicConfig):
     self.n_train_classes = 4112
     self.proto_dim = 64
     self.classification_weight = 0.005
+    self.ENT_weight = 0.5
 
 
 @RegisterConfig("omniglot", "persistent-SSL")

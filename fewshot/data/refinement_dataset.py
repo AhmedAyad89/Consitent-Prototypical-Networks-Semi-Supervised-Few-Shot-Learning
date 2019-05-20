@@ -272,7 +272,8 @@ class RefinementMetaDataset(object):
         x_unlabel=train_unlabel_img,
         y_unlabel=non_distractor,
         y_train_str=train_labels_str,
-        y_test_str=test_labels_str)
+        y_test_str=test_labels_str,
+        selected_classes=class_seq[:self._nway])
 
   def reset(self):
     self._rnd = np.random.RandomState(self._seed)
