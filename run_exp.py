@@ -407,8 +407,8 @@ def main():
         train(sess, config, m, meta_train_dataset, mvalid, meta_test_dataset)
       if FLAGS.stats:
         print('generate stats ---------------\n\n\n\n')
-        basic_stats(sess, mvalid, meta_test_dataset)
-        # graph_stats(sess, mvalid, meta_train_dataset)
+        # basic_stats(sess, mvalid, meta_test_dataset)
+        distractor_stats(sess, mvalid, meta_train_dataset)
         print("generated stats")
         exit(0)
     else:

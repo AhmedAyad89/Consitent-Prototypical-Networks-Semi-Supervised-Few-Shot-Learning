@@ -232,6 +232,6 @@ class PersistentConfig(BasicENTConfig):
     self.persistent_reg = None
     self.trainable = True
     self.n_train_classes = 4112
-    self.proto_dim = 64
+    self.proto_dim = 1600
     self.classification_weight = 0.005
     self.ENT_weight = 0.25

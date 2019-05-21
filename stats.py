@@ -146,6 +146,33 @@ def graph_stats(sess, model, dataset):
 	# plt.ylabel('some numbers')
 	# plt.show()
 
+
+def distractor_stats(sess, model, dataset):
+	num_batches = 60
+	s = 50
+	walk_length = 10
+	entropy_avg = np.zeros([num_batches])
+	landing_probs_means = np.zeros([num_batches, walk_length])
+	eigen_means = np.zeros([25])
+	for i in range(num_batches):
+		images = dataset.next()
+		batch = preprocess_batch(images)
+		feed_dict = {
+			model.x_train: batch.x_train,
+			model.y_train: batch.y_train,
+			model.x_test: batch.x_test,
+			model.x_unlabel: batch.x_unlabel
+		}
+		h_unlabel_ = model.h_unlabel
+		unlabel_affinity_matrix_ = compute_logits(h_unlabel_, h_unlabel_) - (tf.eye(s, dtype=tf.float32) * 1000.0)
+		outputs = [unlabel_affinity_matrix_, model._unlabel_logits]
+		unlabel_affinity_matrix, unlabel_logits = sess.run(outputs, feed_dict=feed_dict)
+		landing_probs, class_prob = walking_penalty_multi(model._unlabel_logits, unlabel_affinity_matrix_)
+		landing_probs, class_prob = sess.run([landing_probs, class_prob], feed_dict = feed_dict)
+		unlabel_affinity_matrix = sess.run(unlabel_affinity_matrix_, feed_dict=feed_dict)
+		print(batch.y_unlabel)
+		print(np.sum(class_prob[:25]), np.sum(class_prob[25:]), "\n---------------------------------\n")
+
 def gaussian_fit(sess, model, dataset):
 	num_batches = 5
 	s = 25

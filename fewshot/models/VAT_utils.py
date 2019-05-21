@@ -235,7 +235,7 @@ def walking_penalty_multi(logit, affinity_matrix):
             T = tf.matmul(T, unlabelled_transition)
             landing_probs.append(tf.diag_part(tf.matmul(T, point_prob)))
 
-    return  landing_probs
+    return  landing_probs, tf.reduce_mean(class_prob,1) * npoints * nclasses
 
 def get_normalized_vector(d):
         with tf.name_scope('Normalize-vector'):

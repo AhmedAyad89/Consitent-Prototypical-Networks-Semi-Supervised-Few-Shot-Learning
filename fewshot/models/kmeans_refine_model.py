@@ -34,18 +34,28 @@ from fewshot.models.kmeans_utils import assign_cluster, update_cluster, compute_
 from fewshot.models.model_factory import RegisterModel
 from fewshot.models.nnlib import concat
 from fewshot.models.refine_model import RefineModel
-from fewshot.models.basic_model_VAT_ENT import BasicModelVAT_ENT
+from fewshot.models.basic_model_VAT_ENT import BasicModelVAT_ENT, BasicModelENT
 
 from fewshot.utils import logger
-
+from fewshot.models.VAT_utils import walking_penalty_multi
 log = logger.get()
 
 
 @RegisterModel("kmeans-refine")
-class KMeansRefineModel(RefineModel):
+class KMeansRefineModel(BasicModelENT):
 
   def compute_output(self):
     """See `model.py` for documentation."""
+    logits = self._unlabel_logits
+
+    s = tf.shape(logits)
+    s = s[0]
+    p = self.h_unlabel
+    affinity_matrix = compute_logits(p, p) - (tf.eye(s, dtype=tf.float32) * 1000.0)
+    _ , class_probs = walking_penalty_multi(logits, affinity_matrix)
+
+    ####################################
+
     nclasses = self.nway
     num_cluster_steps = self.config.num_cluster_steps
     h_train, h_unlabel, h_test = self.encode(
@@ -74,7 +84,7 @@ class KMeansRefineModel(RefineModel):
       entropy = tf.reduce_sum(
           -prob_unlabel * tf.log(prob_unlabel), [2], keep_dims=True)
       prob_all = concat([prob_train, prob_unlabel], 1)
-      prob_all = tf.stop_gradient(prob_all)
+      prob_all = tf.stop_gradient(prob_all) * class_probs
       protos = update_cluster(h_all, prob_all)
       # protos = tf.cond(
       #     tf.shape(self._x_unlabel)[1] > 0,
