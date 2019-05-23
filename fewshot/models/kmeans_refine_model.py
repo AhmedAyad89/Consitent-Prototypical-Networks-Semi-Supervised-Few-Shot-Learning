@@ -34,73 +34,19 @@ from fewshot.models.kmeans_utils import assign_cluster, update_cluster, compute_
 from fewshot.models.model_factory import RegisterModel
 from fewshot.models.nnlib import concat
 from fewshot.models.refine_model import RefineModel
-from fewshot.models.basic_model_VAT_ENT import BasicModelVAT_ENT, BasicModelENT
+from fewshot.models.basic_model_RW import BasicModelRW
+
 
 from fewshot.utils import logger
-from fewshot.models.VAT_utils import walking_penalty_multi
+from fewshot.models.SSL_utils import get_dist_filter
 log = logger.get()
 
 
 @RegisterModel("kmeans-refine")
-class KMeansRefineModel(BasicModelENT):
+class KMeansRefineModel(RefineModel):
 
   def compute_output(self):
     """See `model.py` for documentation."""
-    logits = self._unlabel_logits
-
-    s = tf.shape(logits)
-    s = s[0]
-    p = self.h_unlabel
-    affinity_matrix = compute_logits(p, p) - (tf.eye(s, dtype=tf.float32) * 1000.0)
-    _ , class_probs = walking_penalty_multi(logits, affinity_matrix)
-    ####################################
-
-    nclasses = self.nway
-    num_cluster_steps = self.config.num_cluster_steps
-    h_train, h_unlabel, h_test = self.encode(
-        self.x_train, self.x_unlabel, self.x_test)
-    y_train = self.y_train
-    protos = self._compute_protos(nclasses, h_train, y_train)
-    logits = compute_logits(protos, h_test)
-
-    # Hard assignment for training images.
-    prob_train = [None] * nclasses
-    for kk in range(nclasses):
-      # [B, N, 1]
-      prob_train[kk] = tf.expand_dims(
-          tf.cast(tf.equal(y_train, kk), h_train.dtype), 2)
-    prob_train = concat(prob_train, 2)
-
-    h_all = concat([h_train, h_unlabel], 1)
-
-    logits_list = []
-    logits_list.append(compute_logits(protos, h_test))
-
-    # Run clustering.
-    for tt in range(num_cluster_steps):
-      # Label assignment.
-      prob_unlabel = assign_cluster(protos, h_unlabel)
-      entropy = tf.reduce_sum(
-          -prob_unlabel * tf.log(prob_unlabel), [2], keep_dims=True)
-      prob_all = concat([prob_train, prob_unlabel], 1)
-      prob_all = tf.stop_gradient(prob_all) * class_probs
-      protos = update_cluster(h_all, prob_all)
-      # protos = tf.cond(
-      #     tf.shape(self._x_unlabel)[1] > 0,
-      #     lambda: update_cluster(h_all, prob_all), lambda: protos)
-      logits_list.append(compute_logits(protos, h_test))
-
-      self._logits = logits_list
-      super().compute_output()
-
-###################################################################
-
-@RegisterModel("kmeans-refine-VAT-ENT")
-class KMeansRefineModelVAT_ENT(BasicModelVAT_ENT):
-
-  def predict(self):
-    """See `model.py` for documentation."""
-    super().predict()
 
     nclasses = self.nway
     num_cluster_steps = self.config.num_cluster_steps
@@ -137,5 +83,63 @@ class KMeansRefineModelVAT_ENT(BasicModelVAT_ENT):
       #     lambda: update_cluster(h_all, prob_all), lambda: protos)
       logits_list.append(compute_logits(protos, h_test))
 
-      self._unlabel_logits = compute_logits(self.protos, h_unlabel)[0]
       self._logits = logits_list
+      super().compute_output()
+
+###################################################################
+
+@RegisterModel("kmeans-filter")
+class KMeansFilterModel(RefineModel):
+  def predict(self):
+    super(RefineModel, self).predict()
+    with tf.name_scope('Predict/VAT'):
+      self._unlabel_logits = compute_logits(self._ssl_protos, self.h_unlabel)
+
+  def compute_output(self):
+    """See `model.py` for documentation."""
+    logits = self._unlabel_logits
+
+    s = tf.shape(logits)
+    s = s[0]
+    p = self.h_unlabel
+    affinity_matrix = compute_logits(p, p) - (tf.eye(s, dtype=tf.float32) * 1000.0)
+    filter = get_dist_filter(logits, affinity_matrix)
+    ####################################
+
+    nclasses = self.nway
+    num_cluster_steps = self.config.num_cluster_steps
+    h_train, h_unlabel, h_test = self.encode(
+        self.x_train, self.x_unlabel, self.x_test)
+    y_train = self.y_train
+    protos = self._compute_protos(nclasses, h_train, y_train)
+    logits = compute_logits(protos, h_test)
+
+    # Hard assignment for training images.
+    prob_train = [None] * nclasses
+    for kk in range(nclasses):
+      # [B, N, 1]
+      prob_train[kk] = tf.expand_dims(
+          tf.cast(tf.equal(y_train, kk), h_train.dtype), 2)
+    prob_train = concat(prob_train, 2)
+
+    h_all = concat([h_train, h_unlabel], 1)
+
+    logits_list = []
+    logits_list.append(compute_logits(protos, h_test))
+
+    # Run clustering.
+    for tt in range(num_cluster_steps):
+      # Label assignment.
+      prob_unlabel = assign_cluster(protos, h_unlabel)
+      entropy = tf.reduce_sum(
+          -prob_unlabel * tf.log(prob_unlabel), [2], keep_dims=True)
+      prob_all = concat([prob_train, prob_unlabel], 1)
+      prob_all = tf.stop_gradient(prob_all) * filter
+      protos = update_cluster(h_all, prob_all)
+      # protos = tf.cond(
+      #     tf.shape(self._x_unlabel)[1] > 0,
+      #     lambda: update_cluster(h_all, prob_all), lambda: protos)
+      logits_list.append(compute_logits(protos, h_test))
+
+      self._logits = logits_list
+      super().compute_output()

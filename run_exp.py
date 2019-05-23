@@ -84,7 +84,7 @@ from fewshot.configs.tiered_imagenet_config import *
 from fewshot.data.data_factory import get_concurrent_iterator
 from fewshot.data.data_factory import get_dataset
 from fewshot.data.episode import Episode
-from fewshot.data.mini_imagenet import MiniImageNetDataset, MiniImageNetDatasetAll
+from fewshot.data.mini_imagenet import MiniImageNetDataset
 from fewshot.data.omniglot import OmniglotDataset
 from fewshot.data.tiered_imagenet import TieredImageNetDataset
 from fewshot.models.basic_model import BasicModel
@@ -92,12 +92,8 @@ from fewshot.models.kmeans_refine_mask_model import KMeansRefineMaskModel
 from fewshot.models.kmeans_refine_model import KMeansRefineModel
 from fewshot.models.kmeans_refine_radius_model import KMeansRefineRadiusModel, KMeansRadiusModel
 from fewshot.models.basic_model_VAT import BasicModelVAT
-from fewshot.models.basic_model_VAT_ENT import BasicModelVAT_ENT, BasicModelENT, BasicModelMatchingENT
-from fewshot.models.basic_model_VAT import BasicModelVAT_Prototypes
-from fewshot.models.VAT_refine_model import RefineModelVAT, RefineModelVAT_Prototypes
-from fewshot.models.basic_model_ENT_graphVAT import BasicModelENTGraphVAT
-from fewshot.models.BasicLP import BasicLP
-from fewshot.models.persistent_model import PersistentModel
+from fewshot.models.basic_model_VAT_ENT import BasicModelVAT_ENT
+from fewshot.models.basic_model_RW import BasicModelRW
 from fewshot.models.measure import batch_apk
 from fewshot.models.model_factory import get_model
 from fewshot.utils import logger
@@ -116,7 +112,7 @@ flags.DEFINE_integer("nclasses_eval", 5, "Number of classes for testing")
 flags.DEFINE_integer("nclasses_train", 5, "Number of classes for training")
 flags.DEFINE_integer("nshot", 1, "nshot")
 flags.DEFINE_integer("classification_nshot", 1, "This determines the shot for classification")
-flags.DEFINE_integer("num_eval_episode", 2400, "Number of evaluation episodes")
+flags.DEFINE_integer("num_eval_episode", 600, "Number of evaluation episodes")
 flags.DEFINE_integer("num_test", -1, "Number of test images per episode")
 flags.DEFINE_integer("num_unlabel", 5, "Number of unlabeled for training")
 flags.DEFINE_integer("steps_per_summary", 200, "Number of steps between summary ops")
@@ -407,8 +403,9 @@ def main():
         train(sess, config, m, meta_train_dataset, mvalid, meta_test_dataset)
       if FLAGS.stats:
         print('generate stats ---------------\n\n\n\n')
-        # basic_stats(sess, mvalid, meta_test_dataset)
-        distractor_stats(sess, mvalid, meta_train_dataset)
+        basic_stats(sess, mvalid, meta_test_dataset)
+        graph_stats(sess, mvalid, meta_test_dataset)
+        distractor_stats(sess, mvalid, meta_test_dataset)
         print("generated stats")
         exit(0)
     else:
@@ -416,10 +413,10 @@ def main():
       train(sess, config, m, meta_train_dataset, mvalid, meta_test_dataset)
 
     results_test = evaluate(sess, mvalid, meta_test_dataset)
-    # results_train = evaluate(sess, mvalid, meta_train_dataset)
+    results_train = evaluate(sess, mvalid, meta_train_dataset)
 
-    # log.info("Final train acc {:.3f}% ({:.3f}%)".format(
-    #     results_train['acc'] * 100.0, results_train['acc_ci'] * 100.0))
+    log.info("Final train acc {:.3f}% ({:.3f}%)".format(
+        results_train['acc'] * 100.0, results_train['acc_ci'] * 100.0))
     log.info("Final test acc {:.3f}% ({:.3f}%)".format(
         results_test['acc'] * 100.0, results_test['acc_ci'] * 100.0))
 

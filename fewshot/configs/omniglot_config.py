@@ -112,71 +112,16 @@ class BasicVAT_ENTConfig(BasicVATConfig):
     self.VAT_ENT_step_size = 1.0
     self.max_train_steps = 20000
 
-@RegisterConfig("omniglot", "basic-ENT")
-class BasicENTConfig(BasicConfig):
+@RegisterConfig("omniglot", "basic-RW")
+class BasicRWConfig(BasicConfig):
   def __init__(self):
     super().__init__()
-    self.name = "omniglot_basic-ENT"
-    self.model_class = "basic-ENT"
-    self.ENT_weight = 1.5
+    self.name = "omniglot_basic-RW"
+    self.model_class = "basic-RW"
+    self.ENT_weight = 2.0
     self.ENT_step_size = 1.0
     self.max_train_steps = 20000
 
-
-@RegisterConfig("omniglot", "basic-matching-ENT")
-class BasicMatchingENTConfig(BasicConfig):
-  def __init__(self):
-    super().__init__()
-    self.name = "omniglot_basic-matching-ENT-CE"
-    self.model_class = "basic-matching-ENT"
-    self.ENT_weight = 1.5
-    self.ENT_step_size = 1.0
-    self.max_train_steps = 20000
-    self.stop_grad_unlbl = False
-    self.stop_grad_lbl  = True
-    self.stop_grad_lbl_logits = True
-    self.match_to_labeled = False
-    self.non_matching = False
-
-
-@RegisterConfig("omniglot", "basic-ENT-graphVAT")
-class BasicENTGraphVATConfig(BasicVATConfig):
-  def __init__(self):
-    super().__init__()
-    self.name = "omniglot_basic-ENT-graphVAT"
-    self.model_class = "basic-ENT-graphVAT"
-    self.ENT_weight = 1.0
-    self.ENT_weight = 1.5
-    self.ENT_step_size = 1.0
-
-@RegisterConfig("omniglot", "basic-VAT-prototypes")
-class BasicVAT_PrototypesConfig(BasicVATConfig):
-
-  def __init__(self):
-    super(BasicVAT_PrototypesConfig, self).__init__()
-    self.name = "omniglot_basic-VAT-prototypes"
-    self.model_class = "basic-VAT-prototypes"
-    self.VAT_weight = 1
-
-@RegisterConfig("omniglot", "VAT-refine")
-class RefineVAT(BasicVATConfig):
-  def __init__(self):
-    super(BasicVATConfig, self).__init__()
-    self.name = "omniglot_VAT-refine"
-    self.model_class = "VAT-refine"
-    self.VAT_weight = 1.0
-
-
-@RegisterConfig("omniglot", "VAT-refine-prototypes")
-class RefineVATPrototypes(BasicVATConfig):
-  def __init__(self):
-    super(BasicVATConfig, self).__init__()
-    self.name = "omniglot_VAT-refine-prototypes"
-    self.model_class = "VAT-refine-prototypes"
-    self.VAT_weight = 1.0
-    self.inference_step_size = 0.09
-    self.num_steps = 10
-    self.VAT_eps = 4.0
 
 @RegisterConfig("omniglot", "kmeans-refine")
 class KMeansRefineConfig(BasicConfig):
@@ -270,51 +215,13 @@ class KMeansRefineMaskTestConfig(KMeansRefineMaskConfig):
     self.steps_per_save = 10
 
 
-@RegisterConfig("omniglot", "persistent")
-class PersistentConfig(BasicENTConfig):
+@RegisterConfig("mini-omniglot", "kmeans-filter")
+class KMeansFilterConfig(BasicConfig):
 
   def __init__(self):
     super().__init__()
-    self.name = "omniglot_persistent"
-    self.model_class = "persistent"
-    self.persistent_reg = None
-    self.trainable = True
-    self.n_train_classes = 4112
-    self.proto_dim = 64
-    self.classification_weight = 0.005
-    self.ENT_weight = 0.5
+    self.name = "omniglot_kmeans-filter"
+    self.model_class = "kmeans-filter"
+    self.num_cluster_steps = 1
 
 
-@RegisterConfig("omniglot", "persistent-SSL")
-class PersistentSSLConfig(BasicConfig):
-
-  def __init__(self):
-    super().__init__()
-    self.name = "omniglot_persistent-SSL"
-    self.model_class = "persistent-SSL"
-    self.persistent_reg = None
-    self.trainable = True
-    self.n_train_classes = 4112
-    self.proto_dim = 64
-    self.classification_weight = 0.005
-    self.VAT_weight = 1.0
-    self.ENT_weight = 1.0
-
-
-@RegisterConfig("omniglot", "basic-pairwise")
-class PairwiseConfig(BasicConfig):
-
-  def __init__(self):
-    super().__init__()
-    self.name = "omniglot_basic_pairwise"
-    self.model_class = "basic-pairwise"
-
-
-@RegisterConfig("omniglot", "pairwise-VAT-ENT")
-class PairwiseVAT_ENTConfig(BasicVATConfig):
-  def __init__(self):
-    super(PairwiseVAT_ENTConfig, self).__init__()
-    self.name = "omniglot_pairwise-VAT-ENT"
-    self.model_class = "pairwise-VAT-ENT"
-    self.ENT_weight = 0.5
-    self.max_train_steps = 30000

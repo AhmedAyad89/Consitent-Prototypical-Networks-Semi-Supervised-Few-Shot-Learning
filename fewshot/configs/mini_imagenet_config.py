@@ -48,7 +48,7 @@ class BasicConfig(object):
     self.normalization = "batch_norm"
     self.lr_scheduler = "fixed"
     self.max_train_steps = 100000
-    self.lr_decay_steps = list(range(0, self.max_train_steps, 20000)[1:])
+    self.lr_decay_steps = list(range(0, self.max_train_steps, 12500)[1:])
     self.lr_list = list(
         map(lambda x: self.learn_rate * (0.5)**x, range(
             len(self.lr_decay_steps))))
@@ -91,14 +91,6 @@ class KMeansRefineDistractorMSV3Config(BasicConfig):
     self.num_cluster_steps = 1
 
 
-@RegisterConfig("mini-imagenet", "basic-LP")
-class BasicLP(BasicConfig):
-
-  def __init__(self):
-    super(BasicLP, self).__init__()
-    self.name = "mini-imagenet_basic-LP"
-    self.model_class = "basic-LP"
-
 
 @RegisterConfig("mini-imagenet", "basic-VAT")
 class BasicVAT(BasicConfig):
@@ -121,40 +113,16 @@ class BasicVAT_ENTConfig(BasicVAT):
     self.VAT_ENT_step_size = 2.5
     self.max_train_steps = 120000
 
-@RegisterConfig("mini-imagenet", "basic-ENT")
-class BasicENTConfig(BasicConfig):
+@RegisterConfig("mini-imagenet", "basic-RW")
+class BasicRWConfig(BasicConfig):
   def __init__(self):
-    super(BasicENTConfig, self).__init__()
-    self.name = "mini-imagenet_basic-ENT"
-    self.model_class = "basic-ENT"
-    self.ENT_weight = 0.75
+    super(BasicRWConfig, self).__init__()
+    self.name = "mini-imagenet_basic-RW"
+    self.model_class = "basic-RW"
+    self.ENT_weight = 0.5
     self.ENT_step_size = 2.5
-    self.max_train_steps = 120000
+    self.max_train_steps = 100000
 
-
-@RegisterConfig("mini-imagenet", "basic-matching-ENT")
-class BasicMatchingENTConfig(BasicConfig):
-  def __init__(self):
-    super().__init__()
-    self.name = "mini-imagenet_basic-matching-ENT"
-    self.model_class = "basic-matching-ENT"
-    self.ENT_weight = 0.75
-    self.ENT_step_size = 2.5
-    self.max_train_steps = 120000
-    self.stop_grad_unlbl = False
-    self.stop_grad_lbl  = True
-    self.stop_grad_lbl_logits = True
-    self.match_to_labeled = False
-
-@RegisterConfig("mini-imagenet", "basic-ENT-graphVAT")
-class BasicENTGraphVATConfig(BasicVAT):
-  def __init__(self):
-    super().__init__()
-    self.name = "mini-imagenet_basic-ENT-graphVAT"
-    self.model_class = "basic-ENT-graphVAT"
-    self.ENT_weight = 1.0
-    self.ENT_weight = 1.5
-    self.ENT_step_size = 1.0
 
 
 @RegisterConfig("mini-imagenet-all", "basic-VAT-ENT")
@@ -189,49 +157,12 @@ class KMeansRadiusConfig(BasicVAT_ENTConfig):
     self.num_cluster_steps = 1
 
 
-@RegisterConfig("mini-imagenet", "VAT-refine-prototypes")
-class RefineVATPrototypes(BasicVAT):
-  def __init__(self):
-    super(BasicVAT, self).__init__()
-    self.name = "mini-imagenet_VAT-refine-prototypes"
-    self.model_class = "VAT-refine-prototypes"
-    self.VAT_weight = 1.0
-    self.ENT_weight = 1.0
-    self.inference_step_size = 0.005
-    self.num_steps = 10
-    self.VAT_eps = 4.0
-    
-    
-@RegisterConfig("mini-imagenet", "pairwise-VAT-ENT")
-class PairwiseVAT_ENTConfig(BasicVAT_ENTConfig):
-  def __init__(self):
-    super(PairwiseVAT_ENTConfig, self).__init__()
-    self.name = "mini-imagenet_pairwise-VAT-ENT"
-    self.model_class = "pairwise-VAT-ENT"
-
-
-@RegisterConfig("mini-imagenet", "kmeans-refine-VAT-ENT")
-class KMeansRefineVAT_ENTConfig(BasicVAT_ENTConfig):
-
-  def __init__(self):
-    super(KMeansRefineVAT_ENTConfig, self).__init__()
-    self.name = "mini-imagenet_kmeans-refine-VAT-ENT"
-    self.model_class = "kmeans-refine-VAT-ENT"
-    self.num_cluster_steps = 1
-    self.VAT_ENT_step_size = 2.0
-
-
-
-@RegisterConfig("mini-imagenet", "persistent")
-class PersistentConfig(BasicENTConfig):
+@RegisterConfig("mini-imagenet", "kmeans-filter")
+class KMeansFilterConfig(BasicConfig):
 
   def __init__(self):
     super().__init__()
-    self.name = "mini-imagenet_persistent"
-    self.model_class = "persistent"
-    self.persistent_reg = None
-    self.trainable = True
-    self.n_train_classes = 4112
-    self.proto_dim = 1600
-    self.classification_weight = 0.005
-    self.ENT_weight = 0.25
+    self.name = "mini-imagenet_kmeans-filter"
+    self.model_class = "kmeans-filter"
+    self.num_cluster_steps = 1
+

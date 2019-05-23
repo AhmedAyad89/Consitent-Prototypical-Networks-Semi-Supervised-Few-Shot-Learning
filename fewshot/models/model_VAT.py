@@ -12,7 +12,7 @@ from fewshot.models.model_factory import RegisterModel
 from fewshot.models.nnlib import (concat, weight_variable)
 from fewshot.utils import logger
 from fewshot.utils.debug import debug_identity
-from fewshot.models.VAT_utils import *
+from fewshot.models.SSL_utils import *
 
 l2_norm = lambda t: tf.sqrt(tf.reduce_sum(tf.pow(t, 2)))
 log = logger.get()
