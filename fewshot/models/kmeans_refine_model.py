@@ -102,8 +102,7 @@ class KMeansFilterModel(RefineModel):
     s = tf.shape(logits)
     s = s[0]
     p = self.h_unlabel
-    affinity_matrix = compute_logits(p, p) - (tf.eye(s, dtype=tf.float32) * 1000.0)
-    filter = get_dist_filter(logits, affinity_matrix)
+    filter = get_dist_filter(logits)
     ####################################
 
     nclasses = self.nway
@@ -131,10 +130,13 @@ class KMeansFilterModel(RefineModel):
     for tt in range(num_cluster_steps):
       # Label assignment.
       prob_unlabel = assign_cluster(protos, h_unlabel)
+      prob_unlabel = tf.squeeze(prob_unlabel)
+      prob_unlabel = prob_unlabel * tf.expand_dims(filter, 1)
+      prob_unlabel = tf.expand_dims(prob_unlabel, 0)
       entropy = tf.reduce_sum(
           -prob_unlabel * tf.log(prob_unlabel), [2], keep_dims=True)
       prob_all = concat([prob_train, prob_unlabel], 1)
-      prob_all = tf.stop_gradient(prob_all) * filter
+      prob_all = tf.stop_gradient(prob_all)
       protos = update_cluster(h_all, prob_all)
       # protos = tf.cond(
       #     tf.shape(self._x_unlabel)[1] > 0,

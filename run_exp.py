@@ -112,7 +112,7 @@ flags.DEFINE_integer("nclasses_eval", 5, "Number of classes for testing")
 flags.DEFINE_integer("nclasses_train", 5, "Number of classes for training")
 flags.DEFINE_integer("nshot", 1, "nshot")
 flags.DEFINE_integer("classification_nshot", 1, "This determines the shot for classification")
-flags.DEFINE_integer("num_eval_episode", 600, "Number of evaluation episodes")
+flags.DEFINE_integer("num_eval_episode", 3000, "Number of evaluation episodes")
 flags.DEFINE_integer("num_test", -1, "Number of test images per episode")
 flags.DEFINE_integer("num_unlabel", 5, "Number of unlabeled for training")
 flags.DEFINE_integer("steps_per_summary", 200, "Number of steps between summary ops")
@@ -413,10 +413,10 @@ def main():
       train(sess, config, m, meta_train_dataset, mvalid, meta_test_dataset)
 
     results_test = evaluate(sess, mvalid, meta_test_dataset)
-    results_train = evaluate(sess, mvalid, meta_train_dataset)
+    # results_train = evaluate(sess, mvalid, meta_train_dataset)
 
-    log.info("Final train acc {:.3f}% ({:.3f}%)".format(
-        results_train['acc'] * 100.0, results_train['acc_ci'] * 100.0))
+    # log.info("Final train acc {:.3f}% ({:.3f}%)".format(
+    #     results_train['acc'] * 100.0, results_train['acc_ci'] * 100.0))
     log.info("Final test acc {:.3f}% ({:.3f}%)".format(
         results_test['acc'] * 100.0, results_test['acc_ci'] * 100.0))
 
