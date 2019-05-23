@@ -53,7 +53,6 @@ class KMeansRefineModel(BasicModelENT):
     p = self.h_unlabel
     affinity_matrix = compute_logits(p, p) - (tf.eye(s, dtype=tf.float32) * 1000.0)
     _ , class_probs = walking_penalty_multi(logits, affinity_matrix)
-
     ####################################
 
     nclasses = self.nway

@@ -154,6 +154,8 @@ def distractor_stats(sess, model, dataset):
 	entropy_avg = np.zeros([num_batches])
 	landing_probs_means = np.zeros([num_batches, walk_length])
 	eigen_means = np.zeros([25])
+	non_prob = 0
+	dist_prob = 0
 	for i in range(num_batches):
 		images = dataset.next()
 		batch = preprocess_batch(images)
@@ -170,9 +172,12 @@ def distractor_stats(sess, model, dataset):
 		landing_probs, class_prob = walking_penalty_multi(model._unlabel_logits, unlabel_affinity_matrix_)
 		landing_probs, class_prob = sess.run([landing_probs, class_prob], feed_dict = feed_dict)
 		unlabel_affinity_matrix = sess.run(unlabel_affinity_matrix_, feed_dict=feed_dict)
-		print(batch.y_unlabel)
-		print(np.sum(class_prob[:25]), np.sum(class_prob[25:]), "\n---------------------------------\n")
+		# print(batch.y_unlabel)
+		# print(class_prob, np.sum(class_prob[:25]), np.sum(class_prob[25:]), "\n---------------------------------\n")
+		non_prob += np.sum(class_prob[:25])
+		dist_prob += np.sum(class_prob[25:])
 
+	print(dist_prob/num_batches, non_prob/num_batches)
 def gaussian_fit(sess, model, dataset):
 	num_batches = 5
 	s = 25
