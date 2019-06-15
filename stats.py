@@ -42,7 +42,7 @@ def preprocess_batch(batch):
 
 
 def basic_stats(sess, model, dataset):
-	num_batches = 10
+	num_batches = 100
 	entropy_avg = np.zeros([num_batches])
 	protos_norm = np.zeros([num_batches])
 	pairwise_distance = np.zeros([num_batches])

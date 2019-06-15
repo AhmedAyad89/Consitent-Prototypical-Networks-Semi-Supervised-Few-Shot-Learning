@@ -215,7 +215,7 @@ class KMeansRefineMaskTestConfig(KMeansRefineMaskConfig):
     self.steps_per_save = 10
 
 
-@RegisterConfig("mini-omniglot", "kmeans-filter")
+@RegisterConfig("omniglot", "kmeans-filter")
 class KMeansFilterConfig(BasicConfig):
 
   def __init__(self):
